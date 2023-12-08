@@ -19,15 +19,16 @@ class MLP(nn.Module):
         self.layer_hidden3 = nn.Linear(256, 128)
         self.layer_out = nn.Linear(128, dim_out)
         self.softmax = nn.Softmax(dim=1)
-        self.weight_keys = [['layer_input.weight', 'layer_input.bias'],
-                            ['layer_hidden1.weight', 'layer_hidden1.bias'],
-                            ['layer_hidden2.weight', 'layer_hidden2.bias'],
-                            ['layer_hidden3.weight', 'layer_hidden3.bias'],
-                            ['layer_out.weight', 'layer_out.bias']
-                            ]
+        self.weight_keys = [
+            ["layer_input.weight", "layer_input.bias"],
+            ["layer_hidden1.weight", "layer_hidden1.bias"],
+            ["layer_hidden2.weight", "layer_hidden2.bias"],
+            ["layer_hidden3.weight", "layer_hidden3.bias"],
+            ["layer_out.weight", "layer_out.bias"],
+        ]
 
     def forward(self, x):
-        x = x.view(-1, x.shape[1]*x.shape[-2]*x.shape[-1])
+        x = x.view(-1, x.shape[1] * x.shape[-2] * x.shape[-1])
         x = self.layer_input(x)
         x = self.relu(x)
 
@@ -56,7 +57,7 @@ class CNNMnist(nn.Module):
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, x.shape[1]*x.shape[2]*x.shape[3])
+        x = x.view(-1, x.shape[1] * x.shape[2] * x.shape[3])
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
@@ -87,12 +88,13 @@ class CNNCifar(nn.Module):
         #                     ['fc1.weight', 'fc1.bias'],
         #                     ]
 
-        self.weight_keys = [['fc1.weight', 'fc1.bias'],
-                            ['fc2.weight', 'fc2.bias'],
-                            ['fc3.weight', 'fc3.bias'],
-                            ['conv2.weight', 'conv2.bias'],
-                            ['conv1.weight', 'conv1.bias'],
-                            ]
+        self.weight_keys = [
+            ["fc1.weight", "fc1.bias"],
+            ["fc2.weight", "fc2.bias"],
+            ["fc3.weight", "fc3.bias"],
+            ["conv2.weight", "conv2.bias"],
+            ["conv1.weight", "conv1.bias"],
+        ]
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))

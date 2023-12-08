@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import pdb
 
+
 class DatasetSplit(Dataset):
     def __init__(self, dataset, idxs):
         self.dataset = dataset
@@ -22,6 +23,7 @@ class DatasetSplit(Dataset):
     def __getitem__(self, item):
         image, label = self.dataset[self.idxs[item]]
         return image, label
+
 
 def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     net_g.eval()
@@ -40,7 +42,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
         probs.append(log_probs)
 
         # sum up batch loss
-        test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()
+        test_loss += F.cross_entropy(log_probs, target, reduction="sum").item()
         # get the index of the max log-probability
         y_pred = log_probs.data.max(1, keepdim=True)[1]
         correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
@@ -49,11 +51,17 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     accuracy = 100.00 * float(correct) / len(data_loader.dataset)
     if args.verbose:
         if user_idx < 0:
-            print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
-                test_loss, correct, len(data_loader.dataset), accuracy))
+            print(
+                "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
+                    test_loss, correct, len(data_loader.dataset), accuracy
+                )
+            )
         else:
-            print('Local model {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
-                user_idx, test_loss, correct, len(data_loader.dataset), accuracy))
+            print(
+                "Local model {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
+                    user_idx, test_loss, correct, len(data_loader.dataset), accuracy
+                )
+            )
 
     if return_probs:
         return accuracy, test_loss, torch.cat(probs)
@@ -66,7 +74,9 @@ def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):
     test_loss = 0
     correct = 0
     # data_loader = DataLoader(dataset, batch_size=args.bs)
-    data_loader = DataLoader(DatasetSplit(dataset, idxs), batch_size=args.bs, shuffle=False)
+    data_loader = DataLoader(
+        DatasetSplit(dataset, idxs), batch_size=args.bs, shuffle=False
+    )
     l = len(data_loader)
 
     for idx, (data, target) in enumerate(data_loader):
@@ -75,7 +85,7 @@ def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):
         log_probs = net_g(data)
 
         # sum up batch loss
-        test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()
+        test_loss += F.cross_entropy(log_probs, target, reduction="sum").item()
         # get the index of the max log-probability
         y_pred = log_probs.data.max(1, keepdim=True)[1]
         correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
@@ -83,18 +93,26 @@ def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):
     test_loss /= len(data_loader.dataset)
     accuracy = 100.00 * float(correct) / len(data_loader.dataset)
     if args.verbose:
-        print('Local model {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
-            user_idx, test_loss, correct, len(data_loader.dataset), accuracy))
+        print(
+            "Local model {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
+                user_idx, test_loss, correct, len(data_loader.dataset), accuracy
+            )
+        )
 
     return accuracy, test_loss
 
-def test_img_local_all(net_local_list, args, dataset_test, dict_users_test, return_all=False):
+
+def test_img_local_all(
+    net_local_list, args, dataset_test, dict_users_test, return_all=False
+):
     acc_test_local = np.zeros(args.num_users)
     loss_test_local = np.zeros(args.num_users)
     for idx in range(args.num_users):
         net_local = net_local_list[idx]
         net_local.eval()
-        a, b = test_img_local(net_local, dataset_test, args, user_idx=idx, idxs=dict_users_test[idx])
+        a, b = test_img_local(
+            net_local, dataset_test, args, user_idx=idx, idxs=dict_users_test[idx]
+        )
 
         acc_test_local[idx] = a
         loss_test_local[idx] = b
@@ -102,6 +120,7 @@ def test_img_local_all(net_local_list, args, dataset_test, dict_users_test, retu
     if return_all:
         return acc_test_local, loss_test_local
     return acc_test_local.mean(), loss_test_local.mean()
+
 
 def test_img_avg_all(net_glob, net_local_list, args, dataset_test, return_net=False):
     net_glob_temp = copy.deepcopy(net_glob)
@@ -126,7 +145,9 @@ def test_img_avg_all(net_glob, net_local_list, args, dataset_test, return_net=Fa
         return acc_test_avg, loss_test_avg, net_glob_temp
     return acc_test_avg, loss_test_avg
 
+
 criterion = nn.CrossEntropyLoss()
+
 
 def test_img_ensemble_all(net_local_list, args, dataset_test):
     probs_all = []
@@ -135,7 +156,9 @@ def test_img_ensemble_all(net_local_list, args, dataset_test):
         net_local = net_local_list[idx]
         net_local.eval()
         # _, _, probs = test_img(net_local, dataset_test, args, return_probs=True, user_idx=idx)
-        acc, loss, probs = test_img(net_local, dataset_test, args, return_probs=True, user_idx=idx)
+        acc, loss, probs = test_img(
+            net_local, dataset_test, args, return_probs=True, user_idx=idx
+        )
         # print('Local model: {}, loss: {}, acc: {}'.format(idx, loss, acc))
         probs_all.append(probs.detach())
 

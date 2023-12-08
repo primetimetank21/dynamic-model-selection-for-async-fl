@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import pdb
 
+
 def fair_iid(dataset, num_users):
     """
     Sample I.I.D. client data from fairness dataset
@@ -16,14 +17,17 @@ def fair_iid(dataset, num_users):
     :param num_users:
     :return: dict of image index
     """
-    num_items = int(len(dataset)/num_users)
+    num_items = int(len(dataset) / num_users)
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
         dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
         all_idxs = list(set(all_idxs) - dict_users[i])
     return dict_users
 
-def fair_noniid(train_data, num_users, num_shards=200, num_imgs=300, train=True, rand_set_all=[]):
+
+def fair_noniid(
+    train_data, num_users, num_shards=200, num_imgs=300, train=True, rand_set_all=[]
+):
     """
     Sample non-I.I.D client data from fairness dataset
     :param dataset:
@@ -34,19 +38,25 @@ def fair_noniid(train_data, num_users, num_shards=200, num_imgs=300, train=True,
     shard_per_user = int(num_shards / num_users)
 
     idx_shard = [i for i in range(num_shards)]
-    dict_users = {i: np.array([], dtype='int64') for i in range(num_users)}
-    idxs = np.arange(num_shards*num_imgs)
+    dict_users = {i: np.array([], dtype="int64") for i in range(num_users)}
+    idxs = np.arange(num_shards * num_imgs)
 
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
-    labels = train_data[1].numpy().reshape(len(train_data[0]),)
+    labels = (
+        train_data[1]
+        .numpy()
+        .reshape(
+            len(train_data[0]),
+        )
+    )
     assert num_shards * num_imgs == len(labels)
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
     # sort labels
     idxs_labels = np.vstack((idxs, labels))
-    idxs_labels = idxs_labels[:,idxs_labels[1,:].argsort()]
-    idxs = idxs_labels[0,:]
+    idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
+    idxs = idxs_labels[0, :]
 
     # divide and assign
     if len(rand_set_all) == 0:
@@ -55,17 +65,26 @@ def fair_noniid(train_data, num_users, num_shards=200, num_imgs=300, train=True,
             for rand in rand_set:
                 rand_set_all.append(rand)
 
-            idx_shard = list(set(idx_shard) - rand_set) # remove shards from possible choices for other users
+            idx_shard = list(
+                set(idx_shard) - rand_set
+            )  # remove shards from possible choices for other users
             for rand in rand_set:
-                dict_users[i] = np.concatenate((dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
+                dict_users[i] = np.concatenate(
+                    (dict_users[i], idxs[rand * num_imgs : (rand + 1) * num_imgs]),
+                    axis=0,
+                )
 
-    else: # this only works if the train and test set have the same distribution of labels
+    else:  # this only works if the train and test set have the same distribution of labels
         for i in range(num_users):
-            rand_set = rand_set_all[i*shard_per_user: (i+1)*shard_per_user]
+            rand_set = rand_set_all[i * shard_per_user : (i + 1) * shard_per_user]
             for rand in rand_set:
-                dict_users[i] = np.concatenate((dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
+                dict_users[i] = np.concatenate(
+                    (dict_users[i], idxs[rand * num_imgs : (rand + 1) * num_imgs]),
+                    axis=0,
+                )
 
     return dict_users, rand_set_all
+
 
 def iid(dataset, num_users):
     """
@@ -74,12 +93,13 @@ def iid(dataset, num_users):
     :param num_users:
     :return: dict of image index
     """
-    num_items = int(len(dataset)/num_users)
+    num_items = int(len(dataset) / num_users)
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
         dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
         all_idxs = list(set(all_idxs) - dict_users[i])
     return dict_users
+
 
 def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
     """
@@ -88,7 +108,7 @@ def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
     :param num_users:
     :return:
     """
-    dict_users = {i: np.array([], dtype='int64') for i in range(num_users)}
+    dict_users = {i: np.array([], dtype="int64") for i in range(num_users)}
 
     idxs_dict = {}
     for i in range(len(dataset)):
@@ -128,13 +148,14 @@ def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
     test = []
     for key, value in dict_users.items():
         x = np.unique(torch.tensor(dataset.targets)[value])
-        assert(len(x)) <= shard_per_user
+        assert (len(x)) <= shard_per_user
         test.append(value)
     test = np.concatenate(test)
-    assert(len(test) == len(dataset))
-    assert(len(set(list(test))) == len(dataset))
+    assert len(test) == len(dataset)
+    assert len(set(list(test))) == len(dataset)
 
     return dict_users, rand_set_all
+
 
 def noniid_replace(dataset, num_users, shard_per_user, rand_set_all=[]):
     """
@@ -144,7 +165,7 @@ def noniid_replace(dataset, num_users, shard_per_user, rand_set_all=[]):
     :return:
     """
     imgs_per_shard = int(len(dataset) / (num_users * shard_per_user))
-    dict_users = {i: np.array([], dtype='int64') for i in range(num_users)}
+    dict_users = {i: np.array([], dtype="int64") for i in range(num_users)}
 
     idxs_dict = {}
     for i in range(len(dataset)):
@@ -170,6 +191,6 @@ def noniid_replace(dataset, num_users, shard_per_user, rand_set_all=[]):
         dict_users[i] = np.concatenate(rand_set)
 
     for key, value in dict_users.items():
-        assert(len(np.unique(torch.tensor(dataset.targets)[value]))) == shard_per_user
+        assert (len(np.unique(torch.tensor(dataset.targets)[value]))) == shard_per_user
 
     return dict_users, rand_set_all
