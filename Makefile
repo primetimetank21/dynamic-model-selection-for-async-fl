@@ -1,8 +1,15 @@
 install:
+	./.github/add_github_hooks.sh
 	pip install --upgrade pip && pip install -r requirements.txt
 
 format:
 	black $$(git ls-files "*.py")
+
+lint:
+	pylint --disable=R,C $$(git ls-files "*.py")
+
+test:
+	echo "TODO: implement tests"
 
 run_mnist_fedavg: install
 	python main_fed.py --dataset mnist --model mlp --num_classes 10 --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
@@ -27,3 +34,5 @@ run_all_mnist: run_mnist_fedavg run_mnist_lgfedavg run_mnist_mtl
 run_all_cifar10: run_cifar10_fedavg run_cifar10_lgfedavg run_cifar10_mtl
 
 run_all: run_all_mnist run_all_cifar10
+
+all: install format lint test
