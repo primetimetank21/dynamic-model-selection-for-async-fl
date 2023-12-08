@@ -2,6 +2,7 @@
 - [ ] talk about `kaggle.json` setup
   - link [here](https://www.kaggle.com/docs/api)
   - username should be your username; key should be the api key generated on kaggle
+- [ ] update the README.md
 
 # Federated Learning with Local and Global Representations
 
