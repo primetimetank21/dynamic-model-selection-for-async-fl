@@ -138,3 +138,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# JSON API Key files
+kaggle.json
+
+# Datasets
+data/*
