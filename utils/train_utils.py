@@ -109,9 +109,7 @@ def get_model(args):
     elif args.model == "cnn" and args.dataset == "mnist":
         net_glob = CNNMnist(args=args).to(args.device)
     elif args.model == "mlp" and args.dataset == "mnist":
-        net_glob = MLP(dim_in=784, dim_hidden=256, dim_out=args.num_classes).to(
-            args.device
-        )
+        net_glob = MLP(dim_in=784, dim_out=args.num_classes).to(args.device)
     else:
         exit("Error: unrecognized model")
     print(net_glob)

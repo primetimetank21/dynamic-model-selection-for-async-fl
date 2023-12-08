@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 
-import math
+# import math
 import random
-from itertools import permutations
+
+# from itertools import permutations
 import numpy as np
 import torch
-import pdb
+
+# import pdb
+from typing import List, Optional
 
 
 def fair_iid(dataset, num_users):
@@ -26,7 +29,11 @@ def fair_iid(dataset, num_users):
 
 
 def fair_noniid(
-    train_data, num_users, num_shards=200, num_imgs=300, train=True, rand_set_all=[]
+    train_data,
+    num_users,
+    num_shards=200,
+    num_imgs=300,
+    rand_set_all: Optional[List[set]] = None,
 ):
     """
     Sample non-I.I.D client data from fairness dataset
@@ -59,7 +66,8 @@ def fair_noniid(
     idxs = idxs_labels[0, :]
 
     # divide and assign
-    if len(rand_set_all) == 0:
+    if rand_set_all is None:
+        rand_set_all = []
         for i in range(num_users):
             rand_set = set(np.random.choice(idx_shard, shard_per_user, replace=False))
             for rand in rand_set:
@@ -101,7 +109,9 @@ def iid(dataset, num_users):
     return dict_users
 
 
-def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
+def noniid(
+    dataset, num_users, shard_per_user, rand_set_all: Optional[List[set]] = None
+):
     """
     Sample non-I.I.D client data from MNIST dataset
     :param dataset:
@@ -131,10 +141,10 @@ def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
             x[i] = np.concatenate([x[i], [idx]])
         idxs_dict[label] = x
 
-    if len(rand_set_all) == 0:
+    if rand_set_all is None:
         rand_set_all = list(range(num_classes)) * shard_per_class
         random.shuffle(rand_set_all)
-        rand_set_all = np.array(rand_set_all).reshape((num_users, -1))
+        rand_set_all: np.ndarray = np.array(rand_set_all).reshape((num_users, -1))
 
     # divide and assign
     for i in range(num_users):
@@ -146,7 +156,7 @@ def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
         dict_users[i] = np.concatenate(rand_set)
 
     test = []
-    for key, value in dict_users.items():
+    for _, value in dict_users.items():
         x = np.unique(torch.tensor(dataset.targets)[value])
         assert (len(x)) <= shard_per_user
         test.append(value)
@@ -157,7 +167,9 @@ def noniid(dataset, num_users, shard_per_user, rand_set_all=[]):
     return dict_users, rand_set_all
 
 
-def noniid_replace(dataset, num_users, shard_per_user, rand_set_all=[]):
+def noniid_replace(
+    dataset, num_users, shard_per_user, rand_set_all: Optional[List[set]] = None
+):
     """
     Sample non-I.I.D client data from MNIST dataset
     :param dataset:
@@ -185,12 +197,12 @@ def noniid_replace(dataset, num_users, shard_per_user, rand_set_all=[]):
         rand_set_label = rand_set_all[i]
         rand_set = []
         for label in rand_set_label:
-            pdb.set_trace()
+            # pdb.set_trace()
             x = np.random.choice(idxs_dict[label], imgs_per_shard, replace=False)
             rand_set.append(x)
         dict_users[i] = np.concatenate(rand_set)
 
-    for key, value in dict_users.items():
+    for _, value in dict_users.items():
         assert (len(np.unique(torch.tensor(dataset.targets)[value]))) == shard_per_user
 
     return dict_users, rand_set_all

@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import numpy as np
 
 np.random.seed(123)
@@ -14,7 +16,7 @@ def gen_data(sigma, rho):
     mean = np.zeros((d,))
     cov = rho**2 * np.eye(d)
     all_data = []
-    for m in range(M):
+    for _ in range(M):
         r_m = np.random.multivariate_normal(mean, cov)
         u_m = v + r_m
 

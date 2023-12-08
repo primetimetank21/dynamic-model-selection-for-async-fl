@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 
-import torch
+# import torch
 from torch import nn
 import torch.nn.functional as F
-from torchvision import models
+
+# from torchvision import models
 
 
 class MLP(nn.Module):
-    def __init__(self, dim_in, dim_hidden, dim_out):
+    def __init__(self, dim_in, dim_out):
         super(MLP, self).__init__()
         self.layer_input = nn.Linear(dim_in, 512)
         self.relu = nn.ReLU()

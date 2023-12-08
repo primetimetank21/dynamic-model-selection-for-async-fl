@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 
+# pylint: disable=redefined-outer-name
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -17,13 +19,13 @@ from utils.options import args_parser
 from models.Nets import MLP, CNNMnist, CNNCifar
 
 
-def test(net_g, data_loader):
+def test(args, net_g, data_loader):
     # testing
     net_g.eval()
     test_loss = 0
     correct = 0
-    l = len(data_loader)
-    for idx, (data, target) in enumerate(data_loader):
+    # l = len(data_loader)
+    for _, (data, target) in enumerate(data_loader):
         data, target = data.to(args.device), target.to(args.device)
         log_probs = net_g(data)
         test_loss += F.cross_entropy(log_probs, target).item()
@@ -120,9 +122,7 @@ if __name__ == "__main__":
         len_in = 1
         for x in img_size:
             len_in *= x
-        net_glob = MLP(dim_in=len_in, dim_hidden=256, dim_out=args.num_classes).to(
-            args.device
-        )
+        net_glob = MLP(dim_in=len_in, dim_out=args.num_classes).to(args.device)
     else:
         exit("Error: unrecognized model")
     print(net_glob)
@@ -138,6 +138,8 @@ if __name__ == "__main__":
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(args.device), target.to(args.device)
             optimizer.zero_grad()
+
+            # pylint: disable=not-callable
             output = net_glob(data)
             loss = F.cross_entropy(output, target)
             loss.backward()
@@ -153,6 +155,8 @@ if __name__ == "__main__":
                     )
                 )
             batch_loss.append(loss.item())
+
+        # pylint: disable=no-value-for-parameter
         loss_avg = sum(batch_loss) / len(batch_loss)
         list_loss.append(loss_avg)
         test_acc, test_loss = test(net_glob, test_loader)
@@ -170,4 +174,4 @@ if __name__ == "__main__":
     plt.savefig("./log/nn_{}_{}_{}.png".format(args.dataset, args.model, args.epochs))
 
     print("test on", len(dataset_test), "samples")
-    test_acc, test_loss = test(net_glob, test_loader)
+    test_acc, test_loss = test(args, net_glob, test_loader)

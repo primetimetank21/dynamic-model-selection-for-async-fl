@@ -17,10 +17,10 @@ from models.test import (
     test_img_local_all,
     test_img_avg_all,
     test_img_ensemble_all,
-    test_img_local,
+    # test_img_local,
 )
 
-import pdb
+# import pdb
 
 if __name__ == "__main__":
     # parse args
@@ -30,6 +30,8 @@ if __name__ == "__main__":
         if torch.cuda.is_available() and args.gpu != -1
         else "cpu"
     )
+
+    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
 
     base_dir = "./save/{}/{}_iid{}_num{}_C{}_le{}/shard{}/{}/".format(
         args.dataset,
@@ -47,7 +49,6 @@ if __name__ == "__main__":
     if not os.path.exists(base_save_dir):
         os.makedirs(base_save_dir, exist_ok=True)
 
-    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
     dict_save_path = os.path.join(base_dir, "dict_users.pkl")
     with open(dict_save_path, "rb") as handle:
         dict_users_train, dict_users_test = pickle.load(handle)
@@ -70,6 +71,7 @@ if __name__ == "__main__":
         if key in w_glob_keys:
             num_param_glob += net_glob.state_dict()[key].numel()
     percentage_param = 100 * float(num_param_glob) / num_param_local
+    # pylint: disable=duplicate-string-formatting-argument
     print(
         "# Params: {} (local), {} (global); Percentage {:.2f} ({}/{})".format(
             num_param_local,
@@ -85,6 +87,7 @@ if __name__ == "__main__":
     for user in range(args.num_users):
         net_local_list.append(copy.deepcopy(net_glob))
 
+    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img_avg_all(
         net_glob, net_local_list, args, dataset_test
     )
@@ -121,7 +124,7 @@ if __name__ == "__main__":
         )
     )
 
-    for iter in range(args.epochs):
+    for _iter in range(args.epochs):
         w_glob = {}
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
@@ -186,17 +189,17 @@ if __name__ == "__main__":
         )
         if acc_test_local > best_acc_local:
             best_acc_local = acc_test_local
-            best_iter = iter
+            best_iter = _iter
             final_net_list = copy.deepcopy(best_net_list_avg)
 
         print(
             "Round {:3d}, Acc (local): {:.2f}, Acc (avg): {:.2f}, Acc (local-best): {:.2f}".format(
-                iter, acc_test_local, acc_test_avg, best_acc_local
+                _iter, acc_test_local, acc_test_avg, best_acc_local
             )
         )
 
         results.append(
-            np.array([iter, acc_test_local, acc_test_avg, best_acc_local, None, None])
+            np.array([_iter, acc_test_local, acc_test_avg, best_acc_local, None, None])
         )
         final_results = np.array(results)
         final_results = pd.DataFrame(final_results, columns=results_columns)
@@ -205,6 +208,8 @@ if __name__ == "__main__":
     acc_test_local, loss_test_local = test_img_local_all(
         final_net_list, args, dataset_test, dict_users_test
     )
+
+    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img_avg_all(
         net_glob, final_net_list, args, dataset_test
     )

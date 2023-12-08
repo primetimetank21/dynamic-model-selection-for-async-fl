@@ -5,9 +5,11 @@
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
+
+# from tqdm import tqdm
 import math
-import pdb
+
+# import pdb
 
 
 class DatasetSplit(Dataset):
@@ -33,7 +35,7 @@ class LocalUpdate(object):
         )
         self.pretrain = pretrain
 
-    def train(self, net, idx=-1, lr=0.1):
+    def train(self, net, lr=0.1):
         net.train()
         # train and update
         optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.5)
@@ -43,9 +45,9 @@ class LocalUpdate(object):
             local_eps = self.args.local_ep_pretrain
         else:
             local_eps = self.args.local_ep
-        for iter in range(local_eps):
+        for _ in range(local_eps):
             batch_loss = []
-            for batch_idx, (images, labels) in enumerate(self.ldr_train):
+            for _, (images, labels) in enumerate(self.ldr_train):
                 images, labels = images.to(self.args.device), labels.to(
                     self.args.device
                 )
@@ -84,9 +86,9 @@ class LocalUpdateMTL(object):
         else:
             local_eps = self.args.local_ep
 
-        for iter in range(local_eps):
+        for _ in range(local_eps):
             batch_loss = []
-            for batch_idx, (images, labels) in enumerate(self.ldr_train):
+            for _, (images, labels) in enumerate(self.ldr_train):
                 images, labels = images.to(self.args.device), labels.to(
                     self.args.device
                 )

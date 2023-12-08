@@ -9,7 +9,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-import pdb
+
+# import pdb
 
 
 class DatasetSplit(Dataset):
@@ -31,11 +32,11 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     test_loss = 0
     correct = 0
     data_loader = DataLoader(datatest, batch_size=args.bs)
-    l = len(data_loader)
+    # l = len(data_loader)
 
     probs = []
 
-    for idx, (data, target) in enumerate(data_loader):
+    for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
         log_probs = net_g(data)
@@ -63,6 +64,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
                 )
             )
 
+    # pylint: disable=unbalanced-tuple-unpacking
     if return_probs:
         return accuracy, test_loss, torch.cat(probs)
     return accuracy, test_loss
@@ -77,9 +79,9 @@ def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):
     data_loader = DataLoader(
         DatasetSplit(dataset, idxs), batch_size=args.bs, shuffle=False
     )
-    l = len(data_loader)
+    # l = len(data_loader)
 
-    for idx, (data, target) in enumerate(data_loader):
+    for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
         log_probs = net_g(data)
@@ -139,6 +141,8 @@ def test_img_avg_all(net_glob, net_local_list, args, dataset_test, return_net=Fa
     for k in w_keys_epoch:
         w_glob_temp[k] = torch.div(w_glob_temp[k], args.num_users)
     net_glob_temp.load_state_dict(w_glob_temp)
+
+    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img(net_glob_temp, dataset_test, args)
 
     if return_net:
@@ -156,7 +160,7 @@ def test_img_ensemble_all(net_local_list, args, dataset_test):
         net_local = net_local_list[idx]
         net_local.eval()
         # _, _, probs = test_img(net_local, dataset_test, args, return_probs=True, user_idx=idx)
-        acc, loss, probs = test_img(
+        _, _, probs = test_img(
             net_local, dataset_test, args, return_probs=True, user_idx=idx
         )
         # print('Local model: {}, loss: {}, acc: {}'.format(idx, loss, acc))

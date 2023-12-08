@@ -11,9 +11,10 @@ import pickle
 import itertools
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from scipy.stats import mode
-from torchvision import datasets, transforms, models
+
+# from tqdm import tqdm
+# from scipy.stats import mode
+# from torchvision import datasets, transforms, models
 import torch
 from torch import nn
 
@@ -21,15 +22,15 @@ from utils.train_utils import get_model, get_data
 from utils.options import args_parser
 from models.Update import LocalUpdateMTL
 from models.test import (
-    test_img,
-    test_img_local,
+    # test_img,
+    # test_img_local,
     test_img_local_all,
     test_img_avg_all,
     test_img_ensemble_all,
 )
 
 
-import pdb
+# import pdb
 
 if __name__ == "__main__":
     # parse args
@@ -39,6 +40,8 @@ if __name__ == "__main__":
         if torch.cuda.is_available() and args.gpu != -1
         else "cpu"
     )
+
+    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
 
     base_dir = "./save/{}/{}_iid{}_num{}_C{}_le{}/shard{}/{}/".format(
         args.dataset,
@@ -55,7 +58,6 @@ if __name__ == "__main__":
     if not os.path.exists(base_save_dir):
         os.makedirs(base_save_dir, exist_ok=True)
 
-    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
     dict_save_path = os.path.join(base_dir, "dict_users.pkl")
     with open(dict_save_path, "rb") as handle:
         dict_users_train, dict_users_test = pickle.load(handle)
@@ -78,6 +80,8 @@ if __name__ == "__main__":
         if key in w_glob_keys:
             num_param_glob += net_glob.state_dict()[key].numel()
     percentage_param = 100 * float(num_param_glob) / num_param_local
+
+    # pylint: disable=duplicate-string-formatting-argument
     print(
         "# Params: {} (local), {} (global); Percentage {:.2f} ({}/{})".format(
             num_param_local,
@@ -118,7 +122,7 @@ if __name__ == "__main__":
     d = len(W)
     del W
 
-    for iter in range(args.epochs):
+    for _iter in range(args.epochs):
         w_glob = {}
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
@@ -166,6 +170,7 @@ if __name__ == "__main__":
                 )
                 torch.save(best_net_list[user].state_dict(), model_save_path)
 
+        # pylint: disable=unbalanced-tuple-unpacking
         acc_test_local, loss_test_local = test_img_local_all(
             best_net_list, args, dataset_test, dict_users_test
         )
@@ -174,7 +179,7 @@ if __name__ == "__main__":
         )
         print(
             "Round {:3d}, Avg Loss {:.3f}, Loss (local): {:.3f}, Acc (local): {:.2f}, Loss (avg): {:.3}, Acc (avg): {:.2f}".format(
-                iter,
+                _iter,
                 loss_avg,
                 loss_test_local,
                 acc_test_local,
@@ -184,7 +189,7 @@ if __name__ == "__main__":
         )
 
         results.append(
-            np.array([iter, acc_test_local, acc_test_avg, best_acc.mean(), None, None])
+            np.array([_iter, acc_test_local, acc_test_avg, best_acc.mean(), None, None])
         )
         final_results = np.array(results)
         final_results = pd.DataFrame(

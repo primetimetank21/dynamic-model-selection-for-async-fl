@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn import metrics
 
 
@@ -54,28 +55,26 @@ def p_rule(y_pred, z_values, threshold=0.5):
     return np.min([odds, 1 / odds]) * 100
 
 
-def plot_distributions(y_true, Z_true, y_pred, Z_pred=None, epoch=None):
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
-
-    subplot_df = (
-        Z_true.assign(race=lambda x: x["race"].map({1: "white", 0: "black"}))
-        .assign(sex=lambda x: x["sex"].map({1: "male", 0: "female"}))
-        .assign(y_pred=y_pred)
-    )
-    _subplot(subplot_df, "race", ax=axes[0])
-    _subplot(subplot_df, "sex", ax=axes[1])
-    _performance_text(fig, y_true, Z_true, y_pred, Z_pred, epoch)
-    fig.tight_layout()
-    return fig
-
-
-def _subplot(subplot_df, col, ax):
+def _subplot(col, ax):
     ax.set_title("Sensitive attribute: {col}")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 7)
     ax.set_yticks([])
     ax.set_ylabel("Prediction distribution")
     ax.set_xlabel(r"$P({{income>50K}}|z_{{{}}})$".format(col))
+
+
+def plot_distributions(y_true, Z_true, y_pred, Z_pred=None, epoch=None):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+
+    Z_true.assign(race=lambda x: x["race"].map({1: "white", 0: "black"})).assign(
+        sex=lambda x: x["sex"].map({1: "male", 0: "female"})
+    ).assign(y_pred=y_pred)
+    _subplot("race", ax=axes[0])
+    _subplot("sex", ax=axes[1])
+    _performance_text(y_true, Z_true, y_pred, Z_pred, epoch)
+    fig.tight_layout()
+    return fig
 
 
 def _performance_text(y_test, Z_test, y_pred, Z_pred=None, epoch=None):

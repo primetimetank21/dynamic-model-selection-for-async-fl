@@ -2,37 +2,48 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 
+# pylint: disable=redefined-outer-name
+
 import copy
 import os
-import itertools
+
+# import itertools
 import numpy as np
-from scipy.stats import mode
-from torchvision import datasets, transforms, models
+
+# from scipy.stats import mode
+# from torchvision import datasets, transforms, models
 import torch
 from torch import nn
-import torch.optim as optim
+
+# import torch.optim as optim
 from utils.sampling import fair_iid, fair_noniid
 from utils.options import args_parser
-from models.Update import LocalUpdate, LocalUpdate_noLG
-from models.Nets import MLP, CNNMnist, CNNCifar, ResnetCifar
+
+# pylint: disable=no-name-in-module
+from models.Update import LocalUpdate_noLG  # ,LocalUpdate
+
+# from models.Nets import MLP, CNNMnist, CNNCifar, ResnetCifar
 from models.Fed import FedAvg
-from models.test import test_img, test_img_local
+
+# from models.test import test_img, test_img_local
 
 import pandas as pd
 
-from sklearn import metrics
+# from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils.class_weight import compute_class_weight
-from torch.utils.data import TensorDataset
-from torch.utils.data import DataLoader
 
-from helpers import load_ICU_data, plot_distributions, _performance_text
+# from sklearn.utils.class_weight import compute_class_weight
+from torch.utils.data import TensorDataset
+
+# from torch.utils.data import DataLoader
+
+from helpers import load_ICU_data, _performance_text  # , plot_distributions
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-import pdb
+# import pdb
 
 
 def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
@@ -53,9 +64,9 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
         y = y[:30000]
         Z = Z[:30000]
 
-    n_points = X.shape[0]
+    # n_points = X.shape[0]
     n_features = X.shape[1]
-    n_sensitive = Z.shape[1]
+    # n_sensitive = Z.shape[1]
 
     print(n_features)
 
@@ -95,17 +106,17 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
 
     batch_size = 32
 
-    train_loader = DataLoader(
-        train_data, batch_size=batch_size, shuffle=True, drop_last=True
-    )
-    test_loader = DataLoader(
-        test_data, batch_size=len(test_data), shuffle=True, drop_last=True
-    )
+    # train_loader = DataLoader(
+    #     train_data, batch_size=batch_size, shuffle=True, drop_last=True
+    # )
+    # test_loader = DataLoader(
+    #     test_data, batch_size=len(test_data), shuffle=True, drop_last=True
+    # )
 
     # sample users
     if args.iid:
         dict_users_train = fair_iid(train_data, args.num_users)
-        dict_users_test = fair_iid(test_data, args.num_users)
+        # dict_users_test = fair_iid(test_data, args.num_users)
     else:
         train_data = [
             _df_to_tensor(X_train),
@@ -118,17 +129,20 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
             _df_to_tensor(Z_test),
         ]
         # import pdb; pdb.set_trace()
-        dict_users_train, rand_set_all = fair_noniid(
-            train_data, args.num_users, num_shards=100, num_imgs=150, train=True
-        )
-        dict_users_test, _ = fair_noniid(
-            test_data,
+        dict_users_train, _ = fair_noniid(
+            train_data,
             args.num_users,
             num_shards=100,
             num_imgs=150,
-            train=False,
-            rand_set_all=rand_set_all,
         )
+        # dict_users_test, _ = fair_noniid(
+        #     test_data,
+        #     args.num_users,
+        #     num_shards=100,
+        #     num_imgs=150,
+        #     train=False,
+        #     rand_set_all=rand_set_all,
+        # )
 
     train_data = [
         _df_to_tensor(X_train),
@@ -158,30 +172,30 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
             final = torch.sigmoid(self.network2(mid))
             return mid, final
 
-    def pretrain_classifier(clf, data_loader, optimizer, criterion):
-        losses = 0.0
-        for x, y, _ in data_loader:
-            x = x.to(args.device)
-            y = y.to(args.device)
-            clf.zero_grad()
-            mid, p_y = clf(x)
-            loss = criterion(p_y, y)
-            loss.backward()
-            optimizer.step()
-            losses += loss.item()
-        print("loss", losses / len(data_loader))
-        return clf
+    # def pretrain_classifier(clf, data_loader, optimizer, criterion):
+    #     losses = 0.0
+    #     for x, y, _ in data_loader:
+    #         x = x.to(args.device)
+    #         y = y.to(args.device)
+    #         clf.zero_grad()
+    #         _, p_y = clf(x)
+    #         loss = criterion(p_y, y)
+    #         loss.backward()
+    #         optimizer.step()
+    #         losses += loss.item()
+    #     print("loss", losses / len(data_loader))
+    #     return clf
 
-    def test_classifier(clf, data_loader):
-        losses = 0
-        assert len(data_loader) == 1
-        with torch.no_grad():
-            for x, y_test, _ in data_loader:
-                x = x.to(args.device)
-                mid, y_pred = clf(x)
-                y_pred = y_pred.cpu()
-                clf_accuracy = metrics.accuracy_score(y_test, y_pred > 0.5) * 100
-        return clf_accuracy
+    # def test_classifier(clf, data_loader):
+    #     losses = 0
+    #     assert len(data_loader) == 1
+    #     with torch.no_grad():
+    #         for x, y_test, _ in data_loader:
+    #             x = x.to(args.device)
+    #             mid, y_pred = clf(x)
+    #             y_pred = y_pred.cpu()
+    #             clf_accuracy = metrics.accuracy_score(y_test, y_pred > 0.5) * 100
+    #     return clf_accuracy
 
     class Adversary(nn.Module):
         def __init__(self, n_sensitive, n_hidden=32):
@@ -199,101 +213,102 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
         def forward(self, x):
             return torch.sigmoid(self.network(x))
 
-    def pretrain_adversary(adv, clf, data_loader, optimizer, criterion):
-        losses = 0.0
-        for x, _, z in data_loader:
-            x = x.to(args.device)
-            z = z.to(args.device)
-            mid, p_y = clf(x)
-            mid = mid.detach()
-            p_y = p_y.detach()
-            adv.zero_grad()
-            p_z = adv(mid)
-            loss = (
-                criterion(p_z.to(args.device), z.to(args.device))
-                * lambdas.to(args.device)
-            ).mean()
-            loss.backward()
-            optimizer.step()
-            losses += loss.item()
-        print("loss", losses / len(data_loader))
-        return adv
+    # def pretrain_adversary(adv, clf, data_loader, optimizer, criterion):
+    #     losses = 0.0
+    #     for x, _, z in data_loader:
+    #         x = x.to(args.device)
+    #         z = z.to(args.device)
+    #         mid, p_y = clf(x)
+    #         mid = mid.detach()
+    #         p_y = p_y.detach()
+    #         adv.zero_grad()
+    #         p_z = adv(mid)
+    #         loss = (
+    #             criterion(p_z.to(args.device), z.to(args.device))
+    #             * lambdas.to(args.device)
+    #         ).mean()
+    #         loss.backward()
+    #         optimizer.step()
+    #         losses += loss.item()
+    #     print("loss", losses / len(data_loader))
+    #     return adv
 
-    def test_adversary(adv, clf, data_loader):
-        losses = 0
-        adv_accuracies = []
-        assert len(data_loader) == 1
-        with torch.no_grad():
-            for x, _, z_test in data_loader:
-                x = x.to(args.device)
-                mid, p_y = clf(x)
-                mid = mid.detach()
-                p_y = p_y.detach()
-                p_z = adv(mid)
-                for i in range(p_z.shape[1]):
-                    z_test_i = z_test[:, i]
-                    z_pred_i = p_z[:, i]
-                    z_pred_i = z_pred_i.cpu()
-                    adv_accuracy = (
-                        metrics.accuracy_score(z_test_i, z_pred_i > 0.5) * 100
-                    )
-                    adv_accuracies.append(adv_accuracy)
-        return adv_accuracies
+    # def test_adversary(adv, clf, data_loader):
+    #     losses = 0
+    #     adv_accuracies = []
+    #     assert len(data_loader) == 1
+    #     with torch.no_grad():
+    #         for x, _, z_test in data_loader:
+    #             x = x.to(args.device)
+    #             mid, p_y = clf(x)
+    #             mid = mid.detach()
+    #             p_y = p_y.detach()
+    #             p_z = adv(mid)
+    #             for i in range(p_z.shape[1]):
+    #                 z_test_i = z_test[:, i]
+    #                 z_pred_i = p_z[:, i]
+    #                 z_pred_i = z_pred_i.cpu()
+    #                 adv_accuracy = (
+    #                     metrics.accuracy_score(z_test_i, z_pred_i > 0.5) * 100
+    #                 )
+    #                 adv_accuracies.append(adv_accuracy)
+    #     return adv_accuracies
 
-    def train_both(
-        clf,
-        adv,
-        data_loader,
-        clf_criterion,
-        adv_criterion,
-        clf_optimizer,
-        adv_optimizer,
-        lambdas,
-    ):
-        # Train adversary
-        adv_losses = 0.0
-        for x, y, z in data_loader:
-            x = x.to(args.device)
-            z = z.to(args.device)
-            local, p_y = clf(x)
-            adv.zero_grad()
-            p_z = adv(local)
-            loss_adv = (
-                adv_criterion(p_z.to(args.device), z.to(args.device))
-                * lambdas.to(args.device)
-            ).mean()
-            loss_adv.backward()
-            adv_optimizer.step()
-            adv_losses += loss_adv.item()
-        print("adversarial loss", adv_losses / len(data_loader))
+    # def train_both(
+    #     clf,
+    #     adv,
+    #     data_loader,
+    #     clf_criterion,
+    #     adv_criterion,
+    #     clf_optimizer,
+    #     adv_optimizer,
+    #     lambdas,
+    # ):
+    #     # Train adversary
+    #     adv_losses = 0.0
+    #     for x, y, z in data_loader:
+    #         x = x.to(args.device)
+    #         z = z.to(args.device)
+    #         local, p_y = clf(x)
+    #         adv.zero_grad()
+    #         p_z = adv(local)
+    #         loss_adv = (
+    #             adv_criterion(p_z.to(args.device), z.to(args.device))
+    #             * lambdas.to(args.device)
+    #         ).mean()
+    #         loss_adv.backward()
+    #         adv_optimizer.step()
+    #         adv_losses += loss_adv.item()
+    #     print("adversarial loss", adv_losses / len(data_loader))
 
-        # Train classifier on single batch
-        clf_losses = 0.0
-        for x, y, z in data_loader:
-            x = x.to(args.device)
-            y = y.to(args.device)
-            z = z.to(args.device)
-            local, p_y = clf(x)
-            p_z = adv(local)
-            clf.zero_grad()
-            if args.adv:
-                clf_loss = (
-                    clf_criterion(p_y.to(args.device), y.to(args.device))
-                    - (
-                        adv_criterion(p_z.to(args.device), z.to(args.device))
-                        * lambdas.to(args.device)
-                    ).mean()
-                )
-            else:
-                clf_loss = clf_criterion(p_y.to(args.device), y.to(args.device))
-            clf_loss.backward()
-            clf_optimizer.step()
-            clf_losses += clf_loss.item()
-        print("classifier loss", clf_losses / len(data_loader))
-        return clf, adv
+    #     # Train classifier on single batch
+    #     clf_losses = 0.0
+    #     for x, y, z in data_loader:
+    #         x = x.to(args.device)
+    #         y = y.to(args.device)
+    #         z = z.to(args.device)
+    #         local, p_y = clf(x)
+    #         p_z = adv(local)
+    #         clf.zero_grad()
+    #         if args.adv:
+    #             clf_loss = (
+    #                 clf_criterion(p_y.to(args.device), y.to(args.device))
+    #                 - (
+    #                     adv_criterion(p_z.to(args.device), z.to(args.device))
+    #                     * lambdas.to(args.device)
+    #                 ).mean()
+    #             )
+    #         else:
+    #             clf_loss = clf_criterion(p_y.to(args.device), y.to(args.device))
+    #         clf_loss.backward()
+    #         clf_optimizer.step()
+    #         clf_losses += clf_loss.item()
+    #     print("classifier loss", clf_losses / len(data_loader))
+    #     return clf, adv
 
     def eval_global_performance_text(test_loader_i, global_model, adv_model):
         with torch.no_grad():
+            # pylint: disable=undefined-loop-variable
             for test_x, test_y, test_z in test_loader_i:
                 test_x = test_x.to(args.device)
                 local_pred, clf_pred = global_model(test_x)
@@ -367,12 +382,12 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
 
     # build global model
     global_clf = GlobalClassifier(n_features=n_features).to(args.device)
-    global_clf_criterion = nn.BCELoss().to(args.device)
-    global_clf_optimizer = optim.Adam(global_clf.parameters(), lr=0.01)
+    # global_clf_criterion = nn.BCELoss().to(args.device)
+    # global_clf_optimizer = optim.Adam(global_clf.parameters(), lr=0.01)
 
     adv_model = Adversary(Z_train.shape[1]).to(args.device)
-    adv_criterion = nn.BCELoss(reduce=False).to(args.device)
-    adv_optimizer = optim.Adam(adv_model.parameters(), lr=0.01)
+    # adv_criterion = nn.BCELoss(reduce=False).to(args.device)
+    # adv_optimizer = optim.Adam(adv_model.parameters(), lr=0.01)
 
     # copy weights
     w_glob = global_clf.state_dict()
@@ -383,12 +398,12 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
     )
 
     global_epochs = 10
-    for iter in range(global_epochs):
+    for _iter in range(global_epochs):
         w_locals, adv_locals, w_loss_locals, adv_loss_locals = [], [], [], []
         for idx in range(args.num_users):
             print(
                 "\n\n======================== GLOBAL TRAINING, ITERATION %d, USER %d ========================\n\n\n"
-                % (iter, idx)
+                % (_iter, idx)
             )
             train_loader_i, test_loader_i = net_local_list[idx]
 

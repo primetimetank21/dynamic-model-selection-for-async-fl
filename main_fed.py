@@ -14,7 +14,7 @@ from models.Update import LocalUpdate
 from models.test import test_img
 import os
 
-import pdb
+# import pdb
 
 if __name__ == "__main__":
     # parse args
@@ -24,6 +24,8 @@ if __name__ == "__main__":
         if torch.cuda.is_available() and args.gpu != -1
         else "cpu"
     )
+
+    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
 
     base_dir = "./save/{}/{}_iid{}_num{}_C{}_le{}/shard{}/{}/".format(
         args.dataset,
@@ -38,7 +40,6 @@ if __name__ == "__main__":
     if not os.path.exists(os.path.join(base_dir, "fed")):
         os.makedirs(os.path.join(base_dir, "fed"), exist_ok=True)
 
-    dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
     dict_save_path = os.path.join(base_dir, "dict_users.pkl")
     with open(dict_save_path, "wb") as handle:
         pickle.dump((dict_users_train, dict_users_test), handle)
@@ -59,12 +60,12 @@ if __name__ == "__main__":
     lr = args.lr
     results = []
 
-    for iter in range(args.epochs):
+    for _iter in range(args.epochs):
         w_glob = None
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
-        print("Round {}, lr: {:.6f}, {}".format(iter, lr, idxs_users))
+        print("Round {}, lr: {:.6f}, {}".format(_iter, lr, idxs_users))
 
         for idx in idxs_users:
             local = LocalUpdate(
@@ -94,25 +95,27 @@ if __name__ == "__main__":
         loss_avg = sum(loss_locals) / len(loss_locals)
         loss_train.append(loss_avg)
 
-        if (iter + 1) % args.test_freq == 0:
+        if (_iter + 1) % args.test_freq == 0:
             net_glob.eval()
+
+            # pylint: disable=unbalanced-tuple-unpacking
             acc_test, loss_test = test_img(net_glob, dataset_test, args)
             print(
                 "Round {:3d}, Average loss {:.3f}, Test loss {:.3f}, Test accuracy: {:.2f}".format(
-                    iter, loss_avg, loss_test, acc_test
+                    _iter, loss_avg, loss_test, acc_test
                 )
             )
 
             if best_acc is None or acc_test > best_acc:
                 net_best = copy.deepcopy(net_glob)
                 best_acc = acc_test
-                best_epoch = iter
+                best_epoch = _iter
 
             # if (iter + 1) > args.start_saving:
-            #     model_save_path = os.path.join(base_dir, 'fed/model_{}.pt'.format(iter + 1))
+            #     model_save_path = os.path.join(base_dir, 'fed/model_{}.pt'.format(_iter + 1))
             #     torch.save(net_glob.state_dict(), model_save_path)
 
-            results.append(np.array([iter, loss_avg, loss_test, acc_test, best_acc]))
+            results.append(np.array([_iter, loss_avg, loss_test, acc_test, best_acc]))
             final_results = np.array(results)
             final_results = pd.DataFrame(
                 final_results,
@@ -120,9 +123,11 @@ if __name__ == "__main__":
             )
             final_results.to_csv(results_save_path, index=False)
 
-        if (iter + 1) % 50 == 0:
-            best_save_path = os.path.join(base_dir, "fed/best_{}.pt".format(iter + 1))
-            model_save_path = os.path.join(base_dir, "fed/model_{}.pt".format(iter + 1))
+        if (_iter + 1) % 50 == 0:
+            best_save_path = os.path.join(base_dir, "fed/best_{}.pt".format(_iter + 1))
+            model_save_path = os.path.join(
+                base_dir, "fed/model_{}.pt".format(_iter + 1)
+            )
             torch.save(net_best.state_dict(), best_save_path)
             torch.save(net_glob.state_dict(), model_save_path)
 
