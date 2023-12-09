@@ -1,4 +1,4 @@
-[![Python Versions](https://github.com/primetimetank21/dynamic-model-selection-for-async-fl/workflows/Python%20Versions/badge.svg)](https://github.com/primetimetank21/dynamic-model-selection-for-async-fl/actions/workflows/python-versions.yaml)
+[![Python Versions](https://github.com/primetimetank21/dynamic-model-selection-for-async-fl/actions/workflows/python-versions.yaml/badge.svg)](https://github.com/primetimetank21/dynamic-model-selection-for-async-fl/actions/workflows/python-versions.yaml)
 # TODO:
 - [ ] talk about `kaggle.json` setup
   - link [here](https://www.kaggle.com/docs/api)
