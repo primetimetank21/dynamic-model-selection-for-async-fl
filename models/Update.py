@@ -20,8 +20,14 @@ class DatasetSplit(Dataset):
     def __len__(self):
         return len(self.idxs)
 
-    def __getitem__(self, item):
-        image, label = self.dataset[self.idxs[item]]
+    def __getitem__(self, item: int):
+        try:
+            image, label = self.dataset[self.idxs[item]]
+        except IndexError:  # for COBA dataset
+            # pylint: disable=no-member
+            image = self.data[item]
+            label = self.targets[item]
+
         return image, label
 
 
@@ -48,10 +54,14 @@ class LocalUpdate(object):
         for _ in range(local_eps):
             batch_loss = []
             for _, (images, labels) in enumerate(self.ldr_train):
+                # print(f"self.ldr_train: {self.ldr_train}")
                 images, labels = images.to(self.args.device), labels.to(
                     self.args.device
                 )
                 net.zero_grad()
+                # print(f"images: shape={images.shape}")
+                if self.args.dataset == "coba":
+                    images = images.permute(0, 3, 1, 2)
                 log_probs = net(images)
 
                 loss = self.loss_func(log_probs, labels)

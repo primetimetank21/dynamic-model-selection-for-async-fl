@@ -1,9 +1,9 @@
 from typing import Dict
 from torchvision import datasets, transforms
 from torch.utils.data import random_split
-from models.Nets import MLP, CNNMnist, CNNCifar
-from utils.sampling import iid, noniid
+from models.Nets import MLP, CNNCoba, CNNMnist, CNNCifar
 from utils.coba_dataset import COBA
+from utils.sampling import iid, noniid
 
 
 trans_mnist = transforms.Compose(
@@ -123,13 +123,14 @@ def get_data(args):
     return dataset_train, dataset_test, dict_users_train, dict_users_test
 
 
-# pylint: disable=fixme
-# TODO: Make model for COBA
 def get_model(args):
-    if args.model == "cnn" and args.dataset in ["cifar10", "cifar100"]:
-        net_glob = CNNCifar(args=args).to(args.device)
-    elif args.model == "cnn" and args.dataset in ["mnist"]:
-        net_glob = CNNMnist(args=args).to(args.device)
+    if args.model == "cnn":
+        if args.dataset in ["cifar10", "cifar100"]:
+            net_glob = CNNCifar(args=args).to(args.device)
+        elif args.dataset in ["mnist"]:
+            net_glob = CNNMnist(args=args).to(args.device)
+        elif args.dataset in ["coba"]:
+            net_glob = CNNCoba(args=args).to(args.device)
     elif args.model == "mlp" and args.dataset in ["mnist"]:
         net_glob = MLP(dim_in=784, dim_out=args.num_classes).to(args.device)
     else:

@@ -105,3 +105,34 @@ class CNNCifar(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return F.log_softmax(x, dim=1)
+
+
+# Tankard's IoBT Model
+class CNNCoba(nn.Sequential):
+    """
+    ref: https://stackoverflow.com/questions/68606661/what-is-difference-between-nn-module-and-nn-sequential
+    """
+
+    def __init__(self, args):
+        super().__init__()
+        self.layers = nn.Sequential(
+            nn.Conv2d(  # ref: https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
+                in_channels=args.num_channels,
+                # out_channels=10,
+                out_channels=16,
+                kernel_size=3,  # kernel_size=(3,3),
+                padding="same",
+            ),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Flatten(),
+            nn.Linear(in_features=65536, out_features=50),
+            nn.ReLU(),
+            nn.Linear(50, args.num_classes),
+            nn.Softmax(),
+        )
+
+    # pylint: disable=arguments-renamed
+    def forward(self, x):
+        output = self.layers(x)
+        return output

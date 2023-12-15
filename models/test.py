@@ -39,6 +39,8 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
+        if args.dataset == "coba":
+            data = data.permute(0, 3, 1, 2)
         log_probs = net_g(data)
         probs.append(log_probs)
 
