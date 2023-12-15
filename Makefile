@@ -9,7 +9,13 @@ lint:
 	pylint --disable=R,C $$(git ls-files "*.py")
 
 test:
-	echo "TODO: implement tests"
+	echo "TODO: implement tests":
+
+jupyter:
+	jupyter lab
+
+run_coba_fedavg: install
+	python main_fed.py --dataset coba --model cnn --num_classes 14 --epochs 1000 --lr 0.1 --num_users 100 --shards_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
 
 run_mnist_fedavg: install
 	python main_fed.py --dataset mnist --model mlp --num_classes 10 --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
