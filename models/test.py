@@ -86,6 +86,10 @@ def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):
     for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
+
+        if args.dataset == "coba":
+            data = data.permute(0, 3, 1, 2)
+
         log_probs = net_g(data)
 
         # sum up batch loss
@@ -152,9 +156,6 @@ def test_img_avg_all(net_glob, net_local_list, args, dataset_test, return_net=Fa
     return acc_test_avg, loss_test_avg
 
 
-criterion = nn.CrossEntropyLoss()
-
-
 def test_img_ensemble_all(net_local_list, args, dataset_test):
     probs_all = []
     preds_all = []
@@ -175,6 +176,7 @@ def test_img_ensemble_all(net_local_list, args, dataset_test):
     preds_probs = torch.mean(torch.stack(probs_all), dim=0)
 
     # ensemble (avg) metrics
+    criterion = nn.CrossEntropyLoss()
     preds_avg = preds_probs.data.max(1, keepdim=True)[1].cpu().numpy().reshape(-1)
     loss_test = criterion(preds_probs, torch.tensor(labels).to(args.device)).item()
     acc_test_avg = (preds_avg == labels).mean() * 100
