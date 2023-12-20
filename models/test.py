@@ -42,7 +42,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
 
     probs = []
 
-    logger.debug("Starting test loop")
+    logger.debug("Starting test loop: (len = %i)", len(data_loader))
     for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
