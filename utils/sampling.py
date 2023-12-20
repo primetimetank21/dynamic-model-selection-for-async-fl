@@ -114,8 +114,6 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
     :param num_users:
     :return:
     """
-    # pylint: disable=logging-fstring-interpolation
-
     num_users = args.num_users
     shard_per_user = args.shard_per_user
     logger: Logger = get_logger(args=args, filename="noniid")
@@ -153,7 +151,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
         try:
             rand_set_all = np.array(rand_set_all).reshape((num_users, -1))
         except ValueError as ve:
-            logger.warning(f"ValueError: {ve}. Attempting to reshape...")
+            logger.warning("ValueError: %s. Attempting to reshape...", ve)
             for i in range(num_users, 0, -1):
                 try:
                     rand_set_all = np.array(rand_set_all).reshape((i, -1))
@@ -164,7 +162,8 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
                     break
                 except ValueError:
                     continue
-        logger.warning(f"New rand_set_all.shape: {rand_set_all.shape}")
+
+        logger.warning("New rand_set_all.shape: %s", rand_set_all.shape)
 
     # divide and assign
     for i in range(num_users):

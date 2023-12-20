@@ -4,6 +4,7 @@
 
 import argparse
 import logging
+from typing import Optional
 from pathlib import Path
 
 
@@ -72,9 +73,7 @@ def args_parser() -> argparse.Namespace():
     )
 
     # other arguments
-    parser.add_argument(
-        "--log_level", type=str, default="warning", help="level of logger"
-    )
+    parser.add_argument("--log_level", type=str, default="info", help="level of logger")
     parser.add_argument("--dataset", type=str, default="mnist", help="name of dataset")
     parser.add_argument("--iid", action="store_true", help="whether i.i.d or not")
     parser.add_argument("--num_classes", type=int, default=10, help="number of classes")
@@ -114,32 +113,34 @@ def args_parser() -> argparse.Namespace():
 
 
 def get_logger(*, args: argparse.Namespace, filename: str) -> logging.Logger:
-    log_formatter = logging.Formatter(
-        "[%(asctime)s] %(filename)s :: %(levelname)-8s :: %(message)s"
-    )
-
+    # Create logs directory
     logs_dir = Path(Path.cwd(), "logs")
     if not logs_dir.exists():
         logs_dir.mkdir(exist_ok=True, parents=True)
 
-    # file_handler = logging.FileHandler(f"logs/{filename}.log")
-    file_path = Path(logs_dir, f"{filename}.log")
-    print(f"{filename} file_path: {file_path}")
-    file_handler = logging.FileHandler(file_path)
+    # Create log formatter
+    log_formatter = logging.Formatter(
+        "[%(asctime)s] %(filename)s :: %(levelname)-8s :: %(message)s"
+    )
+
+    # Create handler to write logs to file
+    file_path: Path = Path(logs_dir, f"{filename}.log")
+    file_handler: logging.FileHandler = logging.FileHandler(file_path)
     file_handler.setFormatter(log_formatter)
 
-    console_handler = logging.StreamHandler()
+    # Create handler to output logs to console
+    console_handler: logging.StreamHandler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
 
-    log_level = args.log_level
-    numeric_level = getattr(logging, log_level.upper(), None)
-    if not isinstance(numeric_level, int):
-        numeric_level = logging.WARNING
-        # raise ValueError('Invalid log level: %s' % log_level)
-    # FORMAT = "%(name)s :: %(levelname)-8s :: %(message)s"
-    # logging.basicConfig(format=FORMAT, level=numeric_level, filename=f"{filename}.log")
+    # Get log level from command line arguments
+    log_level: str = args.log_level
+    numeric_level: Optional[int] = getattr(logging, log_level.upper(), None)
 
-    logger = logging.getLogger(filename)
+    if not isinstance(numeric_level, int):
+        numeric_level = logging.INFO
+
+    # Create the logger and add the log level with the created handlers
+    logger: logging.Logger = logging.getLogger(filename)
 
     logger.setLevel(level=numeric_level)
     logger.addHandler(file_handler)

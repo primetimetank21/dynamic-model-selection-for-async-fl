@@ -5,6 +5,7 @@
 import copy
 import numpy as np
 from scipy import stats
+from utils.options import get_logger
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -27,43 +28,67 @@ class DatasetSplit(Dataset):
 
 
 def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
+    logger = get_logger(args=args, filename="test_img")
+
     net_g.eval()
     # testing
+    logger.debug("Starting testing in test_img()")
     test_loss = 0
     correct = 0
+
+    logger.debug("Creating DataLoader")
     data_loader = DataLoader(datatest, batch_size=args.bs)
     # l = len(data_loader)
 
     probs = []
 
+    logger.debug("Starting test loop")
     for _, (data, target) in enumerate(data_loader):
         if args.gpu != -1:
             data, target = data.to(args.device), target.to(args.device)
         if args.dataset == "coba":
             data = data.permute(0, 3, 1, 2)
+
+        logger.debug("\tcalculating log_probs")
         log_probs = net_g(data)
         probs.append(log_probs)
 
         # sum up batch loss
+        logger.debug("\tsumming up batch loss")
         test_loss += F.cross_entropy(log_probs, target, reduction="sum").item()
+
         # get the index of the max log-probability
+        logger.debug("\tgetting index of the max log-probability")
         y_pred = log_probs.data.max(1, keepdim=True)[1]
+
+        logger.debug("\tsumming up correct predictions")
         correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
 
+    logger.debug("Calculating test_loss")
     test_loss /= len(data_loader.dataset)
+    logger.debug("\ttest_loss = %f", test_loss)
+
+    logger.debug("Calculating accuracy")
     accuracy = 100.00 * float(correct) / len(data_loader.dataset)
+    logger.debug("\taccuracy = %f", accuracy)
+
     if args.verbose:
         if user_idx < 0:
-            print(
-                "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
-                    test_loss, correct, len(data_loader.dataset), accuracy
-                )
+            logger.info(
+                "Test set: Average loss: %.4f, Accuracy: %i/%i (%.2f%%)",
+                test_loss,
+                correct,
+                len(data_loader.dataset),
+                accuracy,
             )
         else:
-            print(
-                "Local model {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
-                    user_idx, test_loss, correct, len(data_loader.dataset), accuracy
-                )
+            logger.info(
+                "Local model %i: Average loss: %.4f, Accuracy: %i/%i (%.2f%%)",
+                user_idx,
+                test_loss,
+                correct,
+                len(data_loader.dataset),
+                accuracy,
             )
 
     # pylint: disable=unbalanced-tuple-unpacking
