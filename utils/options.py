@@ -114,7 +114,7 @@ def args_parser() -> argparse.Namespace():
 
 def get_logger(*, args: argparse.Namespace, filename: str) -> logging.Logger:
     # Create logs directory
-    logs_dir = Path(Path.cwd(), "logs")
+    logs_dir = Path(Path.cwd(), "logs", args.dataset.lower())
     if not logs_dir.exists():
         logs_dir.mkdir(exist_ok=True, parents=True)
 
