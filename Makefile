@@ -14,8 +14,11 @@ test:
 jupyter:
 	jupyter lab
 
+run_coba_fedavg_ep1:
+	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level debug --epochs 1 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
+
 run_coba_fedavg: install
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --epochs 1000 --lr 0.1 --num_users 100 --shards_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
+	python main_fed.py --dataset coba --model cnn --num_classes 14 --epochs 1000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1
 
 run_mnist_fedavg: install
 	python main_fed.py --dataset mnist --model mlp --num_classes 10 --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save run1

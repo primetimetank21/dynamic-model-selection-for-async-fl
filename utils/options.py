@@ -3,9 +3,11 @@
 # Python version: 3.6
 
 import argparse
+import logging
+from pathlib import Path
 
 
-def args_parser():
+def args_parser() -> argparse.Namespace():
     parser = argparse.ArgumentParser()
     # federated arguments
     parser.add_argument("--epochs", type=int, default=10, help="rounds of training")
@@ -70,6 +72,9 @@ def args_parser():
     )
 
     # other arguments
+    parser.add_argument(
+        "--log_level", type=str, default="warning", help="level of logger"
+    )
     parser.add_argument("--dataset", type=str, default="mnist", help="name of dataset")
     parser.add_argument("--iid", action="store_true", help="whether i.i.d or not")
     parser.add_argument("--num_classes", type=int, default=10, help="number of classes")
@@ -106,3 +111,38 @@ def args_parser():
 
     args = parser.parse_args()
     return args
+
+
+def get_logger(*, args: argparse.Namespace, filename: str) -> logging.Logger:
+    log_formatter = logging.Formatter(
+        "[%(asctime)s] %(filename)s :: %(levelname)-8s :: %(message)s"
+    )
+
+    logs_dir = Path(Path.cwd(), "logs")
+    if not logs_dir.exists():
+        logs_dir.mkdir(exist_ok=True, parents=True)
+
+    # file_handler = logging.FileHandler(f"logs/{filename}.log")
+    file_path = Path(logs_dir, f"{filename}.log")
+    print(f"{filename} file_path: {file_path}")
+    file_handler = logging.FileHandler(file_path)
+    file_handler.setFormatter(log_formatter)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+
+    log_level = args.log_level
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        numeric_level = logging.WARNING
+        # raise ValueError('Invalid log level: %s' % log_level)
+    # FORMAT = "%(name)s :: %(levelname)-8s :: %(message)s"
+    # logging.basicConfig(format=FORMAT, level=numeric_level, filename=f"{filename}.log")
+
+    logger = logging.getLogger(filename)
+
+    logger.setLevel(level=numeric_level)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    return logger

@@ -6,9 +6,10 @@ import copy
 import pickle
 import numpy as np
 import pandas as pd
+from logging import Logger
 import torch
 
-from utils.options import args_parser
+from utils.options import args_parser, get_logger
 from utils.train_utils import get_data, get_model
 from models.Update import LocalUpdate
 from models.test import test_img
@@ -17,8 +18,14 @@ import os
 # import pdb
 
 if __name__ == "__main__":
+    # pylint: disable=logging-fstring-interpolation
     # parse args
     args = args_parser()
+    logger: Logger = get_logger(
+        args=args, filename=__file__.split(os.sep)[-1].split(".")[0]
+    )
+    logger.log(level=logger.level, msg=f"Log level: {logger.level}")
+    # logger.setLevel(level=logging.DEBUG if args.log_level == "debug" else logging.WARNING)
     args.device = torch.device(
         "cuda:{}".format(args.gpu)
         if torch.cuda.is_available() and args.gpu != -1
@@ -29,6 +36,8 @@ if __name__ == "__main__":
 
     if args.dataset == "coba":
         dataset_train, dataset_test = dataset_train.dataset, dataset_test.dataset
+
+    logger.debug(f"{args.dataset.upper()} dataset loaded")
 
     base_dir = "./save/{}/{}_iid{}_num{}_C{}_le{}/shard{}/{}/".format(
         args.dataset,
@@ -48,7 +57,11 @@ if __name__ == "__main__":
         pickle.dump((dict_users_train, dict_users_test), handle)
 
     # build model
+    logger.debug("Building Model")
     net_glob = get_model(args)
+    logger.debug("Model built")
+
+    logger.debug("Setting model to training mode")
     net_glob.train()
 
     # training
@@ -63,6 +76,7 @@ if __name__ == "__main__":
     lr = args.lr
     results = []
 
+    logger.debug("Starting training loop")
     for _iter in range(args.epochs):
         w_glob = None
         loss_locals = []
@@ -71,17 +85,29 @@ if __name__ == "__main__":
         print("Round {}, lr: {:.6f}, {}".format(_iter, lr, idxs_users))
 
         for idx in idxs_users:
+            logger.debug(f"User {idx} local training")
             local = LocalUpdate(
                 args=args, dataset=dataset_train, idxs=dict_users_train[idx]
             )
+            logger.debug("\tcreating net_local")
             net_local = copy.deepcopy(net_glob)
+            logger.debug("\tnet_local created")
 
+            logger.debug("\ttraining to get w_local and loss")
             w_local, loss = local.train(net=net_local.to(args.device))
+            logger.debug("\ttraining completed")
+            del net_local
+            logger.debug("\tdeleted net_local")
+            logger.debug("\tadding loss to loss_locals")
             loss_locals.append(copy.deepcopy(loss))
+            logger.debug("\tloss added")
+            del loss
 
             if w_glob is None:
+                logger.debug(f"\tcreated w_glob for User {idx}")
                 w_glob = copy.deepcopy(w_local)
             else:
+                logger.debug("\tadding w_local[k] to each key k in w_glob[k]")
                 for k in w_glob.keys():
                     w_glob[k] += w_local[k]
 
