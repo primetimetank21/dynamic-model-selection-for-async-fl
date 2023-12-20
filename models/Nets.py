@@ -129,7 +129,8 @@ class CNNCoba(nn.Sequential):
             nn.Linear(in_features=65536, out_features=50),
             nn.ReLU(),
             nn.Linear(50, args.num_classes),
-            nn.Softmax(),
+            # nn.Softmax(),
+            nn.Softmax(dim=-1),
         )
 
     # pylint: disable=arguments-renamed
