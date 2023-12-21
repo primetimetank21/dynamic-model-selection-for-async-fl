@@ -124,7 +124,12 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
 
     idxs_dict = {}
     for i in range(len(dataset)):
-        label = dataset.targets[i].item()
+        # Tweak for CIFAR10 dataset
+        if isinstance(dataset.targets[i], int):
+            label = torch.tensor(dataset.targets[i]).item()
+        else:
+            label = dataset.targets[i].item()
+
         if label not in idxs_dict.keys():
             idxs_dict[label] = []
         idxs_dict[label].append(i)
@@ -152,18 +157,18 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
             rand_set_all = np.array(rand_set_all).reshape((num_users, -1))
         except ValueError as ve:
             logger.warning("ValueError: %s. Attempting to reshape...", ve)
-            for i in range(num_users, 0, -1):
+            for n in range(num_users, 0, -1):
                 try:
-                    rand_set_all = np.array(rand_set_all).reshape((i, -1))
+                    rand_set_all = np.array(rand_set_all).reshape((n, -1))
 
-                    # pylint: disable=global-variable-not-assigned,undefined-variable
-                    args.num_users = i
-                    num_users = i
+                    # pylint: disable=undefined-variable
+                    args.num_users = n
+                    num_users = n
                     break
                 except ValueError:
                     continue
 
-        logger.warning("New rand_set_all.shape: %s", rand_set_all.shape)
+        logger.info("New rand_set_all.shape: %s", rand_set_all.shape)
 
     # divide and assign
     for i in range(num_users):
@@ -180,7 +185,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
 
     test = []
     for value in dict_users.values():
-        x = np.unique(dataset.targets[value])
+        x = np.unique(np.array(dataset.targets)[value])
         assert (len(x)) <= shard_per_user
         test.append(value)
     test = np.concatenate(test)
