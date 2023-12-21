@@ -144,3 +144,6 @@ kaggle.json
 
 # Datasets
 data/*
+
+# Results
+save/*
