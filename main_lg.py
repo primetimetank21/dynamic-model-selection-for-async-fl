@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Python version: 3.6
-
 import copy
 import os
 import pickle
@@ -20,7 +16,6 @@ from models.test import (
     # test_img_local,
 )
 
-# import pdb
 
 if __name__ == "__main__":
     # parse args

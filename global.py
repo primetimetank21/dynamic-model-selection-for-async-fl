@@ -1,42 +1,27 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Python version: 3.6
-
 # pylint: disable=redefined-outer-name
 
 import copy
 import os
 
-# import itertools
 import numpy as np
 
-# from scipy.stats import mode
-# from torchvision import datasets, transforms, models
 import torch
 from torch import nn
 
-# import torch.optim as optim
 from utils.sampling import fair_iid, fair_noniid
 from utils.options import args_parser
 
 # pylint: disable=no-name-in-module
 from models.Update import LocalUpdate_noLG  # ,LocalUpdate
 
-# from models.Nets import MLP, CNNMnist, CNNCifar, ResnetCifar
 from models.Fed import FedAvg
-
-# from models.test import test_img, test_img_local
 
 import pandas as pd
 
-# from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import TensorDataset
-
-# from torch.utils.data import DataLoader
 
 from helpers import load_ICU_data, _performance_text  # , plot_distributions
 

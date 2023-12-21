@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Python version: 3.6
-
 # import matplotlib
 # matplotlib.use('Agg')
 # import matplotlib.pyplot as plt
@@ -12,9 +8,7 @@ import itertools
 import numpy as np
 import pandas as pd
 
-# from tqdm import tqdm
 # from scipy.stats import mode
-# from torchvision import datasets, transforms, models
 import torch
 from torch import nn
 

@@ -1,15 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Python version: 3.6
-
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-# from tqdm import tqdm
 import math
-
-# import pdb
 
 
 class DatasetSplit(Dataset):

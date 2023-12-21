@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @python: 3.6
-
 import copy
 import numpy as np
 from scipy import stats
@@ -10,8 +6,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-
-# import pdb
 
 
 class DatasetSplit(Dataset):
