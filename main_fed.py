@@ -35,12 +35,27 @@ if __name__ == "__main__":
     if args.dataset == "coba":
         dataset_train, dataset_test = dataset_train.dataset, dataset_test.dataset
 
-    # logger.debug("{dataset} dataset loaded", dataset=args.dataset.upper())
     logger.debug("%s dataset loaded", args.dataset.upper())
 
+    run_num: int = int(args.results_save[-1])
+
+    for file in Path.cwd().glob(pattern="*"):
+        if args.results_save in file.as_posix():
+            run_num += 1
+        else:
+            break
+
+    args.results_save = f"run{run_num}"
+
     base_dir: Path = Path(
-        f"./save/{args.dataset}/{args.model}_iid{args.iid}_num{args.num_users}_C{args.frac}_le{args.local_ep}/shard{args.shard_per_user}/{args.results_save}/"
+        "save",
+        args.dataset,
+        f"{args.model}_iid{args.iid}_num{args.num_users}_C{args.frac}_le{args.local_ep}",
+        f"shard{args.shard_per_user}",
+        args.results_save,
     )
+
+    logger.info("Base save directory: %s", base_dir)
 
     if not Path(base_dir, "fed").exists():
         Path(base_dir, "fed").mkdir(exist_ok=True, parents=True)
@@ -75,7 +90,7 @@ if __name__ == "__main__":
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
-        logger.info("Round %i, lr: %.6f, %s", _iter, lr, idxs_users)
+        logger.info("Round %3d, lr: %.6f, %s", _iter, lr, idxs_users)
 
         for idx in idxs_users:
             logger.debug("User %i local training", idx)
@@ -122,14 +137,14 @@ if __name__ == "__main__":
         loss_train.append(loss_avg)
 
         if (_iter + 1) % args.test_freq == 0:
-            logger.info("Evaluating net_glob")
+            logger.debug("Evaluating net_glob")
             net_glob.eval()
 
             # pylint: disable=unbalanced-tuple-unpacking
             logger.debug("Calculating acc_test and loss_test")
             acc_test, loss_test = test_img(net_glob, dataset_test, args)
             logger.info(
-                "Round %3d, Average loss %.3f, Test loss %.3f, Test accuracy: %.2f",
+                "\tRound %3d, Average loss %.3f, Test loss %.3f, Test accuracy: %.2f",
                 _iter,
                 loss_avg,
                 loss_test,
