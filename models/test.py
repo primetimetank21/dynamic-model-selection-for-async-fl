@@ -31,6 +31,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     logger = get_logger(args=args, filename="test_img")
 
     net_g.eval()
+
     # testing
     logger.debug("Starting testing in test_img()")
     test_loss = 0
@@ -38,9 +39,8 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
 
     logger.debug("Creating DataLoader")
     data_loader = DataLoader(datatest, batch_size=args.bs)
-    # l = len(data_loader)
 
-    probs = []
+    probs: np.array = np.array([])
 
     logger.debug("Starting test loop: (len = %i)", len(data_loader))
     for _, (data, target) in enumerate(data_loader):
@@ -51,7 +51,8 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
 
         logger.debug("\tcalculating log_probs")
         log_probs = net_g(data)
-        probs.append(log_probs)
+
+        probs = np.append(probs, log_probs.data.numpy())
 
         # sum up batch loss
         logger.debug("\tsumming up batch loss")
@@ -60,6 +61,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
         # get the index of the max log-probability
         logger.debug("\tgetting index of the max log-probability")
         y_pred = log_probs.data.max(1, keepdim=True)[1]
+        logger.debug("\tgetting index of the max log-probability")
 
         logger.debug("\tsumming up correct predictions")
         correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
