@@ -33,23 +33,24 @@ if __name__ == "__main__":
 
     logger.debug("%s dataset loaded", args.dataset.upper())
 
+    base_dir: Path = Path(
+        "save",
+        args.dataset,
+        f"{args.model}_iid{args.iid}_num{args.num_users}_C{args.frac}_le{args.local_ep}",
+        f"shard{args.shard_per_user}",
+    )
+
     run_num: int = int(args.results_save[-1])
 
-    for file in Path.cwd().glob(pattern="*"):
-        if args.results_save in file.as_posix():
+    for file in base_dir.glob(pattern="*"):
+        if args.results_save[:-1] in file.as_posix():
             run_num += 1
         else:
             break
 
     args.results_save = f"run{run_num}"
 
-    base_dir: Path = Path(
-        "save",
-        args.dataset,
-        f"{args.model}_iid{args.iid}_num{args.num_users}_C{args.frac}_le{args.local_ep}",
-        f"shard{args.shard_per_user}",
-        args.results_save,
-    )
+    base_dir = Path(base_dir, args.results_save)
 
     logger.info("Base save directory: %s", base_dir)
 
@@ -86,7 +87,7 @@ if __name__ == "__main__":
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
-        logger.info("Round %3d, lr: %.6f, %s", _iter, lr, idxs_users)
+        logger.info("Round %3d, lr: %.3f, %s", _iter, lr, idxs_users)
 
         for idx in idxs_users:
             logger.debug("User %i local training", idx)
@@ -100,12 +101,9 @@ if __name__ == "__main__":
             logger.debug("\ttraining to get w_local and loss")
             w_local, loss = local.train(net=net_local.to(args.device))
             logger.debug("\ttraining completed")
-            del net_local
-            logger.debug("\tdeleted net_local")
+
             logger.debug("\tadding loss to loss_locals")
             loss_locals.append(copy.deepcopy(loss))
-            logger.debug("\tloss added")
-            del loss
 
             if w_glob is None:
                 logger.debug("\tcreated w_glob (during User %i)", idx)
@@ -140,8 +138,9 @@ if __name__ == "__main__":
             logger.debug("Calculating acc_test and loss_test")
             acc_test, loss_test = test_img(net_glob, dataset_test, args)
             logger.info(
-                "\tRound %3d, Average loss %.3f, Test loss %.3f, Test accuracy: %.2f",
-                _iter,
+                # "\tRound %3d, Avg loss %.3f, Test loss %.6f, Test accuracy: %.2f",
+                "\tAvg loss %.3f, Test loss %.6f, Test accuracy: %.2f",
+                # _iter,
                 loss_avg,
                 loss_test,
                 acc_test,
