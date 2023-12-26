@@ -49,12 +49,12 @@ def get_data(args):
         )
         # sample users
         if args.iid:
-            dict_users_train = iid(dataset_train, args.num_users)
-            dict_users_test = iid(dataset_test, args.num_users)
+            dict_users_train = iid(dataset=dataset_train, args=args)
+            dict_users_test = iid(dataset=dataset_test, args=args)
         else:
-            dict_users_train, rand_set_all = noniid(dataset_train, args=args)
+            dict_users_train, rand_set_all = noniid(dataset=dataset_train, args=args)
             dict_users_test, rand_set_all = noniid(
-                dataset_test,
+                dataset=dataset_test,
                 args=args,
                 rand_set_all=rand_set_all,
             )
@@ -66,12 +66,12 @@ def get_data(args):
             "data/cifar10", train=False, download=True, transform=trans_cifar10_val
         )
         if args.iid:
-            dict_users_train = iid(dataset_train, args.num_users)
-            dict_users_test = iid(dataset_test, args.num_users)
+            dict_users_train = iid(dataset=dataset_train, args=args)
+            dict_users_test = iid(dataset=dataset_test, args=args)
         else:
-            dict_users_train, rand_set_all = noniid(dataset_train, args=args)
+            dict_users_train, rand_set_all = noniid(dataset=dataset_train, args=args)
             dict_users_test, rand_set_all = noniid(
-                dataset_test,
+                dataset=dataset_test,
                 args=args,
                 rand_set_all=rand_set_all,
             )
@@ -83,12 +83,12 @@ def get_data(args):
             "data/cifar100", train=False, download=True, transform=trans_cifar100_val
         )
         if args.iid:
-            dict_users_train = iid(dataset_train, args.num_users)
-            dict_users_test = iid(dataset_test, args.num_users)
+            dict_users_train = iid(dataset=dataset_train, args=args)
+            dict_users_test = iid(dataset=dataset_test, args=args)
         else:
-            dict_users_train, rand_set_all = noniid(dataset_train, args=args)
+            dict_users_train, rand_set_all = noniid(dataset=dataset_train, args=args)
             dict_users_test, rand_set_all = noniid(
-                dataset_test,
+                dataset=dataset_test,
                 args=args,
                 rand_set_all=rand_set_all,
             )
@@ -106,13 +106,17 @@ def get_data(args):
 
         if args.iid:
             dict_users_train: Dict[int, set] = iid(
-                dataset_train.dataset, args.num_users
+                dataset=dataset_train.dataset, args=args
             )
-            dict_users_test: Dict[int, set] = iid(dataset_test.dataset, args.num_users)
+            dict_users_test: Dict[int, set] = iid(
+                dataset=dataset_test.dataset, args=args
+            )
         else:
-            dict_users_train, rand_set_all = noniid(dataset_train.dataset, args=args)
+            dict_users_train, rand_set_all = noniid(
+                dataset=dataset_train.dataset, args=args
+            )
             dict_users_test, rand_set_all = noniid(
-                dataset_test.dataset,
+                dataset=dataset_test.dataset,
                 args=args,
                 rand_set_all=rand_set_all,
             )

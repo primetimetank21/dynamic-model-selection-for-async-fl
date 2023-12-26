@@ -100,8 +100,8 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
 
     # sample users
     if args.iid:
-        dict_users_train = fair_iid(train_data, args.num_users)
-        # dict_users_test = fair_iid(test_data, args.num_users)
+        dict_users_train = fair_iid(dataset=train_data, args=args)
+        # dict_users_test = fair_iid(dataset=test_data, args=args)
     else:
         train_data = [
             _df_to_tensor(X_train),
@@ -115,8 +115,8 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
         ]
         # import pdb; pdb.set_trace()
         dict_users_train, _ = fair_noniid(
-            train_data,
-            args.num_users,
+            train_data=train_data,
+            args=args,
             num_shards=100,
             num_imgs=150,
         )

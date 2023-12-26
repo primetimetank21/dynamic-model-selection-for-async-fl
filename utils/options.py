@@ -69,6 +69,9 @@ def args_parser() -> argparse.Namespace():
     )
 
     # other arguments
+    parser.add_argument(
+        "--seed", type=int, default=0, help="seed for reproducible 'randomness'"
+    )
     parser.add_argument("--log_level", type=str, default="info", help="level of logger")
     parser.add_argument("--dataset", type=str, default="mnist", help="name of dataset")
     parser.add_argument("--iid", action="store_true", help="whether i.i.d or not")

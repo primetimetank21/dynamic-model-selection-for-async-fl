@@ -7,16 +7,18 @@ from argparse import Namespace
 from utils.options import get_logger
 
 
-def fair_iid(dataset, num_users):
+def fair_iid(dataset, args: Namespace):
     """
     Sample I.I.D. client data from fairness dataset
     :param dataset:
     :param num_users:
     :return: dict of image index
     """
+    num_users = args.num_users
     num_items = int(len(dataset) / num_users)
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
+        np.random.seed(args.seed)
         dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
         all_idxs = list(set(all_idxs) - dict_users[i])
     return dict_users
@@ -24,7 +26,7 @@ def fair_iid(dataset, num_users):
 
 def fair_noniid(
     train_data,
-    num_users,
+    args: Namespace,
     num_shards=200,
     num_imgs=300,
     rand_set_all: Optional[List[set]] = None,
@@ -35,6 +37,7 @@ def fair_noniid(
     :param num_users:
     :return:
     """
+    num_users = args.num_users
     assert num_shards % num_users == 0
     shard_per_user = int(num_shards / num_users)
 
@@ -63,6 +66,7 @@ def fair_noniid(
     if rand_set_all is None:
         rand_set_all = []
         for i in range(num_users):
+            np.random.seed(args.seed)
             rand_set = set(np.random.choice(idx_shard, shard_per_user, replace=False))
             for rand in rand_set:
                 rand_set_all.append(rand)
@@ -88,16 +92,18 @@ def fair_noniid(
     return dict_users, rand_set_all
 
 
-def iid(dataset, num_users):
+def iid(dataset, args: Namespace):
     """
     Sample I.I.D. client data from MNIST dataset
     :param dataset:
     :param num_users:
     :return: dict of image index
     """
+    num_users = args.num_users
     num_items = int(len(dataset) / num_users)
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
+        np.random.seed(args.seed)
         dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
         all_idxs = list(set(all_idxs) - dict_users[i])
     return dict_users
@@ -147,6 +153,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
 
     if rand_set_all is None:
         rand_set_all = list(range(num_classes)) * shard_per_class
+        random.seed(args.seed)
         random.shuffle(rand_set_all)
 
         try:
@@ -171,6 +178,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
         rand_set_label = rand_set_all[i]
         rand_set = []
         for label in rand_set_label:
+            np.random.seed(args.seed)
             idx = np.random.choice(len(idxs_dict[label]), replace=False)
             rand_set.append(idxs_dict[label].pop(idx))
         dict_users[i] = np.concatenate(rand_set)
@@ -192,7 +200,11 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
 
 
 def noniid_replace(
-    dataset, num_users, shard_per_user, rand_set_all: Optional[List[set]] = None
+    dataset,
+    args: Namespace,
+    num_users,
+    shard_per_user,
+    rand_set_all: Optional[List[set]] = None,
 ):
     """
     Sample non-I.I.D client data from MNIST dataset
@@ -213,6 +225,7 @@ def noniid_replace(
     num_classes = len(np.unique(dataset.targets))
     if len(rand_set_all) == 0:
         for i in range(num_users):
+            np.random.seed(args.seed)
             x = np.random.choice(np.arange(num_classes), shard_per_user, replace=False)
             rand_set_all.append(x)
 
@@ -222,6 +235,7 @@ def noniid_replace(
         rand_set = []
         for label in rand_set_label:
             # pdb.set_trace()
+            np.random.seed(args.seed)
             x = np.random.choice(idxs_dict[label], imgs_per_shard, replace=False)
             rand_set.append(x)
         dict_users[i] = np.concatenate(rand_set)
