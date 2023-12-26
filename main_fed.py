@@ -48,7 +48,7 @@ if __name__ == "__main__":
         else:
             break
 
-    args.results_save = f"run{run_num}"
+    args.results_save = f"{args.results_save[:-1]}{run_num}"
 
     base_dir = Path(base_dir, args.results_save)
 
