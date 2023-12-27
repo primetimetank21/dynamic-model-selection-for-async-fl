@@ -12,8 +12,9 @@ from models.test import test_img
 import os
 from pathlib import Path
 
-# import pdb
-
+# pylint: disable=fixme
+# TODO: test this on COBA with increased fraction of clients
+# TODO: add to scripts for COBA (more customized and efficient testing)
 if __name__ == "__main__":
     # parse args
     args = args_parser()
@@ -78,14 +79,17 @@ if __name__ == "__main__":
     best_acc = None
     best_epoch = None
 
+    w_glob = None
+    m = max(int(args.frac * args.num_users), 1)
+
     lr: float = args.lr
     results: list = []
 
     logger.debug("Starting training loop")
     for _iter in range(args.epochs):
-        w_glob = None
         loss_locals = []
-        m = max(int(args.frac * args.num_users), 1)
+        # w_glob = None
+        # m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
         logger.info("Round %3d, lr: %.3f, %s", _iter, lr, idxs_users)
 
