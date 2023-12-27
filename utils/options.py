@@ -70,7 +70,10 @@ def args_parser() -> argparse.Namespace():
 
     # other arguments
     parser.add_argument(
-        "--seed", type=int, default=0, help="seed for reproducible 'randomness'"
+        "--seed",
+        type=int,
+        default=0,
+        help="seed for reproducible 'randomness' (default: 0)",
     )
     parser.add_argument("--log_level", type=str, default="info", help="level of logger")
     parser.add_argument("--dataset", type=str, default="mnist", help="name of dataset")
@@ -90,7 +93,6 @@ def args_parser() -> argparse.Namespace():
         default=100,
         help="print loss frequency during training",
     )
-    parser.add_argument("--seed", type=int, default=1, help="random seed (default: 1)")
     parser.add_argument(
         "--test_freq", type=int, default=1, help="how often to test on val set"
     )

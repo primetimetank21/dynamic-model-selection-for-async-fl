@@ -43,7 +43,7 @@ run_coba_fedavg_lower_lr_and_decay:
 
 #really good -- when loss func was Softmax (run1 under le10); trying with LogSoftmax (run2 and run3 under le10)
 run_coba_fedavg_le10:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_le10_run1
+	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --seed 0 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_le10_run1
 
 run_mnist_fedavg:
 	python main_fed.py --dataset mnist --model mlp --num_classes 10 --log_level info --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save mnist_fedavg_run1
