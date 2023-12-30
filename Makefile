@@ -1,53 +1,39 @@
+# Get dependencies
 install:
 	./.github/add_github_hooks.sh
 	pip install --upgrade pip && pip install -r requirements.txt
 
+# Format code for consistency
 format:
 	black $$(git ls-files "*.py")
 
+# Check code for any potential issues
 lint:
 	pylint --disable=R,C $$(git ls-files "*.py")
 
+# Verify code behavior
 test:
 	echo "TODO: implement tests":
 
+# Run jupyter server
 jupyter:
 	jupyter lab
 
-run_coba_fedavg_default:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_default_run1
-
+# COBA
 run_coba_fedavg_scenarios_noniid:
 	./scripts/coba/main_fed_coba.sh
 
-#testing purposes
-run_coba_fedavg_ep1:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level debug --epochs 1 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_ep1_run1
+run_coba_fedavg_scenarios_iid:
+	./scripts/coba/main_fed_coba_iid.sh
 
-#bad
-run_coba_fedavg_decay:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --lr_decay 0.95 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_decay_run1
-
-#bad
-run_coba_fedavg_decay_le10:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --lr_decay 0.95 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_decay_le10_run1
-
-#bad
-run_coba_fedavg_decay_ep2000:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 2000 --lr 0.1 --lr_decay 0.95 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_decay_ep2000_run1
-
-#bad
-run_coba_fedavg_lower_lr:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.001 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_lower_lr_run1
-
-#bad
-run_coba_fedavg_lower_lr_and_decay:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.001 --lr_decay 0.95 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_lower_lr_and_decay_run1
+run_coba_fedavg_debug:
+	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level debug --epochs 1 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_debug_run1
 
 #really good -- when loss func was Softmax (run1 under le10); trying with LogSoftmax (run2 and run3 under le10)
-run_coba_fedavg_le10:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --seed 0 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_le10_run1
+# run_coba_fedavg_le10:
+#python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --seed 0 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_le10_run1
 
+# TODO: reorganize the rest of these
 run_mnist_fedavg:
 	python main_fed.py --dataset mnist --model mlp --num_classes 10 --log_level info --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save mnist_fedavg_run1
 
