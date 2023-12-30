@@ -17,6 +17,9 @@ jupyter:
 run_coba_fedavg_default:
 	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_default_run1
 
+run_coba_fedavg_scenarios_noniid:
+	./scripts/coba/main_fed_coba.sh
+
 #testing purposes
 run_coba_fedavg_ep1:
 	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level debug --epochs 1 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_ep1_run1
