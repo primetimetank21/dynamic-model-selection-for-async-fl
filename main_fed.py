@@ -170,7 +170,16 @@ if __name__ == "__main__":
         if (_iter + 1) % 50 == 0:
             best_save_path: Path = Path(base_dir, f"fed/best_{_iter+1}.pt")
             model_save_path: Path = Path(base_dir, f"fed/model_{_iter+1}.pt")
-            torch.save(net_best.state_dict(), best_save_path)
-            torch.save(net_glob.state_dict(), model_save_path)
+
+            if args.device.type != "cpu":
+                torch.save(
+                    net_best.to(torch.device("cpu")).state_dict(), best_save_path
+                )
+                torch.save(
+                    net_glob.to(torch.device("cpu")).state_dict(), model_save_path
+                )
+            else:
+                torch.save(net_best.state_dict(), best_save_path)
+                torch.save(net_glob.state_dict(), model_save_path)
 
     logger.info("Best model, iter: %i, acc: %f", best_epoch, best_acc)
