@@ -129,6 +129,8 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
         # Tweak for CIFAR10 dataset
         if isinstance(dataset.targets[i], int):
             label = torch.tensor(dataset.targets[i]).item()
+        elif args.dataset == "coba":
+            label = dataset.targets[i].argmax().item()
         else:
             label = dataset.targets[i].item()
 
@@ -136,7 +138,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
             idxs_dict[label] = []
         idxs_dict[label].append(i)
 
-    num_classes = len(np.unique(dataset.targets))
+    num_classes = len(np.unique(list(idxs_dict.keys())))
     shard_per_class = int(shard_per_user * num_users / num_classes)
 
     for label in idxs_dict.keys():

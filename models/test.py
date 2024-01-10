@@ -46,19 +46,51 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
         logger.debug("\tcalculating log_probs")
         log_probs = net_g(data)
 
-        probs = np.append(probs, log_probs.data.numpy())
+        if args.device.type != "cpu":
+            probs = np.append(probs, log_probs.cpu().data.numpy())
+        else:
+            probs = np.append(probs, log_probs.data.numpy())
 
         # sum up batch loss
         logger.debug("\tsumming up batch loss")
-        test_loss += F.cross_entropy(log_probs, target, reduction="sum").item()
+        test_loss += F.cross_entropy(
+            log_probs, target.to(torch.float32), reduction="sum"
+        ).item()
 
         # get the index of the max log-probability
         logger.debug("\tgetting index of the max log-probability")
-        y_pred = log_probs.data.max(1, keepdim=True)[1]
+        if args.device.type != "cpu":
+            y_pred = log_probs.cpu().data.max(1, keepdim=True)[1]
+        else:
+            y_pred = log_probs.data.max(1, keepdim=True)[1]
+
         logger.debug("\tgetting index of the max log-probability")
 
         logger.debug("\tsumming up correct predictions")
-        correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
+        logger.debug("y_pred.shape: %s\ntarget.shape: %s", y_pred.shape, target.shape)
+        logger.debug(
+            "type(target.data): %s, target.data: %s", type(target.data), target.data
+        )
+        logger.debug(
+            "torch.tensor(list(map(torch.argmax, target.data)), device='cpu').data.view_as(y_pred): %s",
+            torch.tensor(
+                list(map(torch.argmax, target.data)), device="cpu"
+            ).data.view_as(y_pred),
+        )
+
+        if args.dataset == "coba":
+            correct += (
+                y_pred.eq(
+                    torch.tensor(
+                        list(map(torch.argmax, target.data)), device="cpu"
+                    ).data.view_as(y_pred)
+                )
+                .long()
+                .cpu()
+                .sum()
+            )
+        else:
+            correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
 
     logger.debug("Calculating test_loss")
     test_loss /= len(data_loader.dataset)
