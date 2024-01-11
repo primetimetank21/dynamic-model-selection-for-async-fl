@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
+from sklearn.metrics import f1_score, precision_score, recall_score
 
 
 class DatasetSplit(Dataset):
@@ -30,6 +31,10 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     logger.debug("Starting testing in test_img()")
     test_loss = 0
     correct = 0
+    f1 = 0
+    precision = 0
+    recall = 0
+    class_labels = list(datatest.class_to_idx.keys())
 
     logger.debug("Creating DataLoader")
     data_loader = DataLoader(datatest, batch_size=args.bs)
@@ -38,7 +43,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
 
     logger.debug("Starting test loop: (len = %i)", len(data_loader))
     for _, (data, target) in enumerate(data_loader):
-        if args.gpu != -1:
+        if args.gpu != -1 and args.device.type != "cpu":
             data, target = data.to(args.device), target.to(args.device)
         if args.dataset == "coba":
             data = data.permute(0, 3, 1, 2)
@@ -67,7 +72,7 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
         logger.debug("\tgetting index of the max log-probability")
 
         logger.debug("\tsumming up correct predictions")
-        logger.debug("y_pred.shape: %s\ntarget.shape: %s", y_pred.shape, target.shape)
+        logger.debug("y_pred.shape: %s\ttarget.shape: %s", y_pred.shape, target.shape)
         logger.debug(
             "type(target.data): %s, target.data: %s", type(target.data), target.data
         )
@@ -92,6 +97,33 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
         else:
             correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
 
+        # Other performance metrics
+        y_true = torch.tensor(
+            list(map(torch.argmax, target.data)), device="cpu"
+        ).data.view_as(y_pred)
+
+        f1 += f1_score(
+            labels=class_labels,
+            y_pred=y_pred,
+            y_true=y_true,
+            average="weighted",
+            zero_division=0.0,
+        )
+        recall += recall_score(
+            labels=class_labels,
+            y_pred=y_pred,
+            y_true=y_true,
+            average="weighted",
+            zero_division=0.0,
+        )
+        precision += precision_score(
+            labels=class_labels,
+            y_pred=y_pred,
+            y_true=y_true,
+            average="weighted",
+            zero_division=0.0,
+        )
+
     logger.debug("Calculating test_loss")
     test_loss /= len(data_loader.dataset)
     logger.debug("\ttest_loss = %f", test_loss)
@@ -100,29 +132,47 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
     accuracy = 100.00 * float(correct) / len(data_loader.dataset)
     logger.debug("\taccuracy = %f", accuracy)
 
+    logger.debug("Calculating f1-score")
+    f1 /= len(data_loader.dataset)
+    logger.debug("\tf1 = %f", f1)
+
+    logger.debug("Calculating precision")
+    precision /= len(data_loader.dataset)
+    logger.debug("\tprecision = %f", precision)
+
+    logger.debug("Calculating recall")
+    recall /= len(data_loader.dataset)
+    logger.debug("\trecall = %f", recall)
+
     if args.verbose:
         if user_idx < 0:
             logger.info(
-                "Test set: Average loss: %.4f, Accuracy: %i/%i (%.2f%%)",
+                "Test set: Avg loss: %.4f, Accuracy: %i/%i (%.2f%%), F1: %.4f, Precision: %.4f, Recall: %.4f",
                 test_loss,
                 correct,
                 len(data_loader.dataset),
                 accuracy,
+                f1,
+                precision,
+                recall,
             )
         else:
             logger.info(
-                "Local model %i: Average loss: %.4f, Accuracy: %i/%i (%.2f%%)",
+                "Local model %i: Average loss: %.4f, Accuracy: %i/%i (%.2f%%), F1: %.4f, Precision: %.4f, Recall: %.4f",
                 user_idx,
                 test_loss,
                 correct,
                 len(data_loader.dataset),
                 accuracy,
+                f1,
+                precision,
+                recall,
             )
 
     # pylint: disable=unbalanced-tuple-unpacking
     if return_probs:
         return accuracy, test_loss, torch.cat(probs)
-    return accuracy, test_loss
+    return accuracy, test_loss, f1, precision, recall
 
 
 def test_img_local(net_g, dataset, args, user_idx=-1, idxs=None):

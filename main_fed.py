@@ -12,9 +12,6 @@ from models.test import test_img
 import os
 from pathlib import Path
 
-# pylint: disable=fixme
-# TODO: test this on COBA with increased fraction of clients
-# TODO: add to scripts for COBA (more customized and efficient testing)
 if __name__ == "__main__":
     # parse args
     args = args_parser()
@@ -79,8 +76,9 @@ if __name__ == "__main__":
     best_acc = None
     best_epoch = None
 
-    w_glob = None
-    m = max(int(args.frac * args.num_users), 1)
+    # MAYBE TODO: move this back to inside the loop; might be messing things up
+    # w_glob = None
+    # m = max(int(args.frac * args.num_users), 1)
 
     lr: float = args.lr
     results: list = []
@@ -88,8 +86,8 @@ if __name__ == "__main__":
     logger.debug("Starting training loop")
     for _iter in range(args.epochs):
         loss_locals = []
-        # w_glob = None
-        # m = max(int(args.frac * args.num_users), 1)
+        w_glob = None
+        m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
         logger.info("Round %3d, lr: %.3f, %s", _iter, lr, idxs_users)
 
@@ -140,14 +138,17 @@ if __name__ == "__main__":
 
             # pylint: disable=unbalanced-tuple-unpacking
             logger.debug("Calculating acc_test and loss_test")
-            acc_test, loss_test = test_img(net_glob, dataset_test, args)
+            acc_test, loss_test, f1_test, precision_test, recall_test = test_img(
+                net_glob, dataset_test, args
+            )
             logger.info(
-                # "\tRound %3d, Avg loss %.3f, Test loss %.6f, Test accuracy: %.2f",
-                "\tAvg loss %.3f, Test loss %.6f, Test accuracy: %.2f",
-                # _iter,
+                "\tAvg loss: %.4f, Test loss: %.6f, Accuracy: %.3f, F1: %.4f, Precision: %.4f, Recall: %.4f",
                 loss_avg,
                 loss_test,
                 acc_test,
+                f1_test,
+                precision_test,
+                recall_test,
             )
 
             if best_acc is None or acc_test > best_acc:
@@ -159,27 +160,40 @@ if __name__ == "__main__":
             #     model_save_path = os.path.join(base_dir, 'fed/model_{}.pt'.format(_iter + 1))
             #     torch.save(net_glob.state_dict(), model_save_path)
 
-            results.append(np.array([_iter, loss_avg, loss_test, acc_test, best_acc]))
+            results.append(
+                np.array(
+                    [
+                        _iter,
+                        loss_avg,
+                        loss_test,
+                        acc_test,
+                        f1_test,
+                        precision_test,
+                        recall_test,
+                        best_acc,
+                    ]
+                )
+            )
             final_results = np.array(results)
             final_results = pd.DataFrame(
                 final_results,
-                columns=["epoch", "loss_avg", "loss_test", "acc_test", "best_acc"],
+                columns=[
+                    "epoch",
+                    "loss_avg",
+                    "loss_test",
+                    "acc_test",
+                    "f1_test",
+                    "precision_test",
+                    "recall_test",
+                    "best_acc",
+                ],
             )
             final_results.to_csv(results_save_path, index=False)
 
         if (_iter + 1) % 50 == 0:
             best_save_path: Path = Path(base_dir, f"fed/best_{_iter+1}.pt")
             model_save_path: Path = Path(base_dir, f"fed/model_{_iter+1}.pt")
-
-            if args.device.type != "cpu":
-                torch.save(
-                    net_best.to(torch.device("cpu")).state_dict(), best_save_path
-                )
-                torch.save(
-                    net_glob.to(torch.device("cpu")).state_dict(), model_save_path
-                )
-            else:
-                torch.save(net_best.state_dict(), best_save_path)
-                torch.save(net_glob.state_dict(), model_save_path)
+            torch.save(net_best.state_dict(), best_save_path)
+            torch.save(net_glob.state_dict(), model_save_path)
 
     logger.info("Best model, iter: %i, acc: %f", best_epoch, best_acc)
