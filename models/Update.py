@@ -57,7 +57,11 @@ class LocalUpdate(object):
                     images = images.permute(0, 3, 1, 2)
                 log_probs = net(images)
 
-                loss = self.loss_func(log_probs, labels.to(torch.float32))
+                loss = (
+                    self.loss_func(log_probs, labels.to(torch.float32))
+                    if self.args.dataset == "coba"
+                    else self.loss_func(log_probs, labels)
+                )
                 loss.backward()
                 optimizer.step()
 

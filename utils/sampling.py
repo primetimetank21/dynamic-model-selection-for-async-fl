@@ -127,7 +127,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
     idxs_dict = {}
     for i in range(len(dataset)):
         # Tweak for CIFAR10 dataset
-        if isinstance(dataset.targets[i], int):
+        if isinstance(dataset.targets[i], int) and "cifar" in args.dataset:
             label = torch.tensor(dataset.targets[i]).item()
         elif args.dataset == "coba":
             label = dataset.targets[i].argmax().item()
