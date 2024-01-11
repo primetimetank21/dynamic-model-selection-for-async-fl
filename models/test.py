@@ -134,14 +134,17 @@ def test_img(net_g, datatest, args, return_probs=False, user_idx=-1):
 
     logger.debug("Calculating f1-score")
     f1 /= len(data_loader.dataset)
+    f1 *= 100.00
     logger.debug("\tf1 = %f", f1)
 
     logger.debug("Calculating precision")
     precision /= len(data_loader.dataset)
+    precision *= 100.00
     logger.debug("\tprecision = %f", precision)
 
     logger.debug("Calculating recall")
     recall /= len(data_loader.dataset)
+    recall *= 100.00
     logger.debug("\trecall = %f", recall)
 
     if args.verbose:
