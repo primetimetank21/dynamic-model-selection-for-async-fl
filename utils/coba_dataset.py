@@ -4,6 +4,7 @@ import opendatasets as od
 from typing import Optional, Callable, Tuple, Dict
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
 
 
@@ -93,7 +94,7 @@ class COBA(VisionDataset):
         # else:
         #     data_file = self.test_file
 
-        self.data, self.targets = self._load_data()
+        self.data, self.targets = self._load_data()  # targets are one-hot encoded
 
     def download(self) -> None:
         if self._check_exists():
@@ -138,6 +139,9 @@ class COBA(VisionDataset):
 
         label_file: str = "targets.pt"
         targets = torch.load(Path.cwd().joinpath(self.raw_folder, label_file))
+
+        # pylint:disable=not-callable
+        targets = F.one_hot(targets, num_classes=14)
 
         return data, targets
 
