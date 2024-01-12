@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     args.results_save = f"{args.results_save[:-1]}{run_num}"
 
-    base_dir = Path(base_dir, args.results_save)
+    base_dir = Path(base_dir, f"seed{args.seed}_{args.results_save}")
 
     logger.info("Base save directory: %s", base_dir)
 
