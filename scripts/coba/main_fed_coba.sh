@@ -2,7 +2,7 @@
 
 NUM_USERS=100
 SHARDS=2
-SEED=$1 # already done: 0,1,2,3,4
+SEED=$1 # already done: 0,1,2,3,4,5,6,7,8,9,10
 while getopts s:n: option; do
   case "${option}" in
     s) SHARDS=${OPTARG};;
