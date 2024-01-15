@@ -51,11 +51,13 @@ def test_img(
     IS_USING_GPU: bool = args.gpu != -1 and args.device.type != "cpu"
 
     logger.debug("Starting test loop: (len = %i)", len(data_loader))
-    for _, (data, target) in enumerate(data_loader):
+    for data, target in data_loader:
         if args.gpu != -1 and args.device.type != "cpu":
             data, target = data.to(args.device), target.to(args.device)
         if args.dataset == "coba":
-            data = data.permute(0, 3, 1, 2)
+            data = data.permute(
+                0, 3, 1, 2
+            )  # rearranged to be: (batch size: N, color channels: C, height: H, width: W)
 
         logger.debug("\tcalculating log_probs")
         log_probs: torch.Tensor = net_g(data)

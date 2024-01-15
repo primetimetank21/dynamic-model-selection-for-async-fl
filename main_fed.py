@@ -26,9 +26,6 @@ if __name__ == "__main__":
 
     dataset_train, dataset_test, dict_users_train, dict_users_test = get_data(args)
 
-    if args.dataset == "coba":
-        dataset_train, dataset_test = dataset_train.dataset, dataset_test.dataset
-
     logger.debug("%s dataset loaded", args.dataset.upper())
 
     base_dir: Path = Path(

@@ -2,7 +2,7 @@ from typing import Dict
 from torchvision import datasets, transforms
 from torch.utils.data import random_split
 from models.Nets import MLP, CNNCoba, CNNMnist, CNNCifar
-from utils.coba_dataset import COBA
+from utils.coba_dataset import COBA, COBA_Split
 from utils.sampling import iid, noniid
 
 
@@ -95,7 +95,7 @@ def get_data(args):
     elif args.dataset == "coba":
         coba_dataset: COBA = COBA(root="data/coba", download=True)
 
-        ## Create training and testing data
+        # Create training and testing data (Subsets)
         train_size: int = int(
             0.8 * len(coba_dataset)
         )  # maybe TODO: make the percentage customizable (part of `args`)
@@ -104,19 +104,17 @@ def get_data(args):
             dataset=coba_dataset, lengths=[train_size, test_size]
         )
 
+        # Convert Subset -> Dataset
+        dataset_train: COBA_Split = COBA_Split(dataset=dataset_train)
+        dataset_test: COBA_Split = COBA_Split(dataset=dataset_test)
+
         if args.iid:
-            dict_users_train: Dict[int, set] = iid(
-                dataset=dataset_train.dataset, args=args
-            )
-            dict_users_test: Dict[int, set] = iid(
-                dataset=dataset_test.dataset, args=args
-            )
+            dict_users_train: Dict[int, set] = iid(dataset=dataset_train, args=args)
+            dict_users_test: Dict[int, set] = iid(dataset=dataset_test, args=args)
         else:
-            dict_users_train, rand_set_all = noniid(
-                dataset=dataset_train.dataset, args=args
-            )
+            dict_users_train, rand_set_all = noniid(dataset=dataset_train, args=args)
             dict_users_test, rand_set_all = noniid(
-                dataset=dataset_test.dataset,
+                dataset=dataset_test,
                 args=args,
                 rand_set_all=rand_set_all,
             )

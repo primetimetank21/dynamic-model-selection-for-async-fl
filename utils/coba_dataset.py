@@ -1,11 +1,12 @@
 from pathlib import Path
 import warnings
 import opendatasets as od
-from typing import Optional, Callable, Tuple, Dict
+from typing import List, Optional, Callable, Tuple, Dict
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
+from torch.utils.data import Subset
 
 
 ## Define custom CobaDataset class
@@ -181,4 +182,31 @@ class COBA(VisionDataset):
         return Path.exists(Path(self.raw_folder, "data.pt")) and Path.exists(
             Path(self.raw_folder, "targets.pt")
         )
-        # return (Path.exists(Path.joinpath(self.raw_folder, self.training_file)) and Path.exists(Path.joinpath(self.raw_folder, self.test_file)))
+
+
+# pylint: disable=super-init-not-called
+class COBA_Split(COBA):
+    def __init__(self, dataset: Subset) -> None:
+        self.root, self.transform, self.target_transform = (
+            dataset.dataset.root,
+            dataset.dataset.transform,
+            dataset.dataset.target_transform,
+        )
+
+        new_dataset: List[Tuple[torch.Tensor, torch.Tensor]] = [
+            (img, label) for img, label in dataset
+        ]
+
+        imgs, labels = [data[0] for data in new_dataset], [
+            data[1] for data in new_dataset
+        ]
+
+        self.data, self.targets = torch.stack(imgs), torch.stack(labels)
+
+    @property
+    def raw_folder(self) -> Path:
+        return Path(self.root, self.__class__.__base__.__name__, "raw")
+
+    @property
+    def processed_folder(self) -> Path:
+        return Path(self.root, self.__class__.__base__.__name__, "processed")
