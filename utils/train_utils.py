@@ -111,7 +111,7 @@ def get_data(args):
         else:
             # Use same data for both training and testing
             dataset_train = dataset_train.dataset
-            dataset_test= dataset_test.dataset
+            dataset_test = dataset_test.dataset
 
         if args.iid:
             dict_users_train: Dict[int, set] = iid(dataset=dataset_train, args=args)
