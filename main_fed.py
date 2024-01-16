@@ -73,14 +73,10 @@ if __name__ == "__main__":
     best_acc = None
     best_epoch = None
 
-    # MAYBE TODO: move this back to inside the loop; might be messing things up
-    # w_glob = None
-    # m = max(int(args.frac * args.num_users), 1)
-
     lr: float = args.lr
     results: list = []
 
-    logger.debug("Starting training loop")
+    logger.info("Starting training loop (%i epochs)", args.epochs)
     for _iter in range(args.epochs):
         loss_locals = []
         w_glob = None
