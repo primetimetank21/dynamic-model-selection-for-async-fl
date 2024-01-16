@@ -104,9 +104,14 @@ def get_data(args):
             dataset=coba_dataset, lengths=[train_size, test_size]
         )
 
-        # Convert Subset -> Dataset
-        dataset_train: COBA_Split = COBA_Split(dataset=dataset_train)
-        dataset_test: COBA_Split = COBA_Split(dataset=dataset_test)
+        if args.train_test_same != 0:
+            # Convert Subset -> Dataset
+            dataset_train: COBA_Split = COBA_Split(dataset=dataset_train)
+            dataset_test: COBA_Split = COBA_Split(dataset=dataset_test)
+        else:
+            # Use same data for both training and testing
+            dataset_train = dataset_train.dataset
+            dataset_test= dataset_test.dataset
 
         if args.iid:
             dict_users_train: Dict[int, set] = iid(dataset=dataset_train, args=args)

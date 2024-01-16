@@ -8,6 +8,7 @@ def args_parser() -> argparse.Namespace():
     parser = argparse.ArgumentParser()
     # federated arguments
     parser.add_argument("--epochs", type=int, default=10, help="rounds of training")
+    parser.add_argument("--train_test_same", type=int, default=0, help="use same data to train and test on (COBA dataset), 0 for same")
     parser.add_argument("--num_users", type=int, default=100, help="number of users: K")
     parser.add_argument(
         "--shard_per_user", type=int, default=2, help="classes per user"
