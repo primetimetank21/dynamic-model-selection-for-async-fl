@@ -6,6 +6,7 @@ install:
 # Format code for consistency
 format:
 	black $$(git ls-files "*.py")
+	black $$(git ls-files "*.ipynb")
 
 # Check code for any potential issues
 lint:
