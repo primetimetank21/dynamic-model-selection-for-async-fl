@@ -7,6 +7,5 @@ torch==2.1.1
 torchvision==0.16.1
 jupyterlab==4.0.9
 opendatasets==0.1.22
-black==23.11.0
-black[jupyter]==23.11.0
-pylint==3.0.2
+ruff==0.1.14
+mypy==1.8.0

@@ -5,12 +5,16 @@ install:
 
 # Format code for consistency
 format:
-	black $$(git ls-files "*.py")
-	black $$(git ls-files "*.ipynb")
+	ruff format $$(git ls-files "*.py")
+	ruff format $$(git ls-files "*.ipynb")
 
 # Check code for any potential issues
 lint:
-	pylint --disable=R,C $$(git ls-files "*.py")
+	ruff check $$(git ls-files "*.py")
+	mypy $$(git ls-files "*.py")
+
+type-check:
+	mypy $$(git ls-files "*.py")
 
 # Verify code behavior
 test:
