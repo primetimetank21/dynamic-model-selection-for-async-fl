@@ -2,7 +2,7 @@ import random
 from logging import Logger
 import numpy as np
 import torch
-from typing import Dict, List, Optional
+from typing import Any, Dict, Set, List, Optional, Union, cast
 from argparse import Namespace
 from utils.options import get_logger
 
@@ -61,6 +61,7 @@ def fair_noniid(
     idxs_labels = np.vstack((idxs, labels))
     idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
     idxs = idxs_labels[0, :]
+    rand_set: Union[Set[Any], List[Set[Any]], None] = None
 
     # divide and assign
     if rand_set_all is None:
@@ -92,7 +93,7 @@ def fair_noniid(
     return dict_users, rand_set_all
 
 
-def iid(dataset, args: Namespace):
+def iid(dataset, args: Namespace) -> Dict[int, set]:
     """
     Sample I.I.D. client data from MNIST dataset
     :param dataset:
@@ -101,7 +102,8 @@ def iid(dataset, args: Namespace):
     """
     num_users = args.num_users
     num_items = int(len(dataset) / num_users)
-    dict_users, all_idxs = {}, [i for i in range(len(dataset))]
+    dict_users: Dict[int, set] = {}
+    all_idxs: List[int] = [i for i in range(len(dataset))]
     for i in range(num_users):
         np.random.seed(args.seed)
         dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
@@ -109,7 +111,7 @@ def iid(dataset, args: Namespace):
     return dict_users
 
 
-def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
+def noniid(dataset, args: Namespace, rand_set_all: Optional[np.ndarray] = None):
     """
     Sample non-I.I.D client data from MNIST dataset
     :param dataset:
@@ -124,8 +126,10 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
         i: np.array([], dtype="int64") for i in range(num_users)
     }
 
-    idxs_dict = {}
+    idxs_dict: Dict[Union[int, float, Any], Any] = {}
+
     for i in range(len(dataset)):
+        label: Union[int, float, Any] = None
         # Tweak for CIFAR10 dataset
         if isinstance(dataset.targets[i], int) and "cifar" in args.dataset:
             label = torch.tensor(dataset.targets[i]).item()
@@ -154,24 +158,24 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
         idxs_dict[label] = x
 
     if rand_set_all is None:
-        rand_set_all = list(range(num_classes)) * shard_per_class
-        random.seed(args.seed)
-        random.shuffle(rand_set_all)
-
         try:
-            rand_set_all = np.array(rand_set_all).reshape((num_users, -1))
+            rand_set_list: List[int] = list(range(num_classes)) * shard_per_class
+            random.seed(args.seed)
+            random.shuffle(rand_set_list)
+            rand_set_all = np.array(rand_set_list).reshape((num_users, -1))
         except ValueError as ve:
             logger.warning("ValueError: %s. Attempting to reshape...", ve)
             for n in range(num_users, 0, -1):
                 try:
-                    rand_set_all = np.array(rand_set_all).reshape((n, -1))
+                    rand_set_all = np.array(rand_set_list).reshape((n, -1))
 
-                    # pylint: disable=undefined-variable
                     args.num_users = n
                     num_users = n
                     break
                 except ValueError:
                     continue
+
+        rand_set_all = cast(np.ndarray, rand_set_all)
 
         logger.info("New rand_set_all.shape: %s", rand_set_all.shape)
 
@@ -185,9 +189,7 @@ def noniid(dataset, args: Namespace, rand_set_all: Optional[List[set]] = None):
             rand_set.append(idxs_dict[label].pop(idx))
         dict_users[i] = np.concatenate(rand_set)
 
-    dict_users: Dict[int, np.ndarray] = {
-        key: val for key, val in dict_users.items() if len(val)
-    }
+    dict_users = {key: val for key, val in dict_users.items() if len(val)}
 
     test = []
     for value in dict_users.values():
@@ -217,7 +219,7 @@ def noniid_replace(
     imgs_per_shard = int(len(dataset) / (num_users * shard_per_user))
     dict_users = {i: np.array([], dtype="int64") for i in range(num_users)}
 
-    idxs_dict = {}
+    idxs_dict: Dict[Union[int, float, Any], Any] = {}
     for i in range(len(dataset)):
         label = torch.tensor(dataset.targets[i]).item()
         if label not in idxs_dict.keys():
@@ -225,6 +227,9 @@ def noniid_replace(
         idxs_dict[label].append(i)
 
     num_classes = len(np.unique(dataset.targets))
+
+    rand_set_all = [] if rand_set_all is None else rand_set_all
+
     if len(rand_set_all) == 0:
         for i in range(num_users):
             np.random.seed(args.seed)
@@ -233,8 +238,8 @@ def noniid_replace(
 
     # divide and assign
     for i in range(num_users):
-        rand_set_label = rand_set_all[i]
-        rand_set = []
+        rand_set_label: set = rand_set_all[i]
+        rand_set: list = []
         for label in rand_set_label:
             # pdb.set_trace()
             np.random.seed(args.seed)
@@ -243,6 +248,9 @@ def noniid_replace(
         dict_users[i] = np.concatenate(rand_set)
 
     for _, value in dict_users.items():
-        assert (len(np.unique(torch.tensor(dataset.targets)[value]))) == shard_per_user
+        assert (
+            len(np.unique(torch.tensor(dataset.targets).numpy()[value]))
+            == shard_per_user
+        )
 
     return dict_users, rand_set_all

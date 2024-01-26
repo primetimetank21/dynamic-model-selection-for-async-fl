@@ -1,9 +1,11 @@
 import copy
 import pickle
 import numpy as np
-import pandas as pd
+import pandas as pd  # type:ignore
 from logging import Logger
 import torch
+from typing import Optional, Union, cast
+from models.Nets import MLP, CNNCifar, CNNCoba, CNNMnist
 
 from utils.options import args_parser, get_logger
 from utils.train_utils import get_data, get_model
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     results_save_path: Path = Path(base_dir, "fed/results.csv")
 
     loss_train = []
-    net_best = None
+    net_best: Optional[Union[CNNCifar, CNNMnist, CNNCoba, MLP]] = None
     best_loss = None
     best_acc = None
     best_epoch = None
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     logger.info("Starting training loop (%i epochs)", args.epochs)
     for _iter in range(args.epochs):
         loss_locals = []
-        w_glob = None
+        w_glob: Optional[dict] = None
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
         logger.info("Round %3d, lr: %.3f, %s", _iter, lr, idxs_users)
@@ -114,6 +116,7 @@ if __name__ == "__main__":
 
         # update global weights
         logger.debug("Updating global weights")
+        w_glob = cast(dict, w_glob)
         for k in w_glob.keys():
             w_glob[k] = torch.div(w_glob[k], m)
 
@@ -130,11 +133,10 @@ if __name__ == "__main__":
             logger.debug("Evaluating net_glob")
             net_glob.eval()
 
-            # pylint: disable=unbalanced-tuple-unpacking
             logger.debug("Calculating acc_test and loss_test")
             acc_test, loss_test, f1_test, precision_test, recall_test = test_img(
                 net_glob, dataset_test, args
-            )
+            )  # type:ignore
             logger.info(
                 "\tAvg loss: %.4f, Test loss: %.6f, Accuracy: %.3f, F1: %.4f, Precision: %.4f, Recall: %.4f",
                 loss_avg,
@@ -168,9 +170,8 @@ if __name__ == "__main__":
                     ]
                 )
             )
-            final_results = np.array(results)
             final_results = pd.DataFrame(
-                final_results,
+                np.array(results),
                 columns=[
                     "epoch",
                     "loss_avg",
@@ -187,6 +188,8 @@ if __name__ == "__main__":
         if (_iter + 1) % 50 == 0:
             best_save_path: Path = Path(base_dir, f"fed/best_{_iter+1}.pt")
             model_save_path: Path = Path(base_dir, f"fed/model_{_iter+1}.pt")
+
+            net_best = cast(Union[CNNCifar, CNNMnist, CNNCoba, MLP], net_best)
             torch.save(net_best.state_dict(), best_save_path)
             torch.save(net_glob.state_dict(), model_save_path)
 

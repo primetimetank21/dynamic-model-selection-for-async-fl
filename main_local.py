@@ -1,7 +1,7 @@
 import copy
 import os
 import pickle
-import pandas as pd
+import pandas as pd  # type:ignore
 import numpy as np
 import torch
 from torch import nn
@@ -61,14 +61,14 @@ if __name__ == "__main__":
     # training
     results_save_path = os.path.join(base_dir, "local/results.csv")
 
-    loss_train = []
+    # loss_train = []
     net_best = None
     best_loss = None
     best_acc = None
     best_epoch = None
 
     lr = args.lr
-    results = []
+    # results = []
 
     criterion = nn.CrossEntropyLoss()
 
@@ -112,7 +112,6 @@ if __name__ == "__main__":
         net_local_list, args, dataset_test, dict_users_test
     )
 
-    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img_avg_all(
         net_glob, net_local_list, args, dataset_test
     )
@@ -126,11 +125,8 @@ if __name__ == "__main__":
         )
     )
 
-    final_results = np.array(
-        [[acc_test_local, acc_test_avg, acc_test_ens_avg, acc_test_ens_maj]]
-    )
     final_results = pd.DataFrame(
-        final_results,
+        np.array([[acc_test_local, acc_test_avg, acc_test_ens_avg, acc_test_ens_maj]]),
         columns=[
             "acc_test_local",
             "acc_test_avg",

@@ -1,13 +1,14 @@
 import copy
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, cast
 import numpy as np
-from scipy import stats
+from scipy import stats  # type:ignore
 from utils.options import get_logger
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from collections.abc import Sized
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score  # type:ignore
 
 
 class DatasetSplit(Dataset):
@@ -47,7 +48,7 @@ def test_img(
     logger.debug("Creating DataLoader")
     data_loader: DataLoader = DataLoader(datatest, batch_size=args.bs)
 
-    probs: np.array = np.array([])
+    probs: List[torch.Tensor] = []
     IS_USING_GPU: bool = args.gpu != -1 and args.device.type != "cpu"
 
     logger.debug("Starting test loop: (len = %i)", len(data_loader))
@@ -62,11 +63,8 @@ def test_img(
         logger.debug("\tcalculating log_probs")
         log_probs: torch.Tensor = net_g(data)
 
-        probs: np.array = (
-            np.append(probs, log_probs.cpu().data.numpy())
-            if IS_USING_GPU
-            else np.append(probs, log_probs.data.numpy())
-        )
+        if return_probs:
+            probs.append(log_probs.cpu() if IS_USING_GPU else log_probs)
 
         # Sum up batch loss
         logger.debug("\tcalculating cross entropy loss")
@@ -116,10 +114,10 @@ def test_img(
             zero_division=0.0,
         )
 
-    N: int = len(data_loader.dataset)
+    N: int = len(cast(Sized, data_loader.dataset))
 
     logger.debug("Calculating accuracy")
-    correct: int = accuracy
+    correct: int = int(accuracy)
     accuracy /= N
     accuracy *= 100.00
     logger.debug("\taccuracy = %f", accuracy)
@@ -168,7 +166,6 @@ def test_img(
                 recall,
             )
 
-    # pylint: disable=unbalanced-tuple-unpacking
     if return_probs:
         return accuracy, test_loss, f1, precision, recall, torch.cat(probs)
     return accuracy, test_loss, f1, precision, recall
@@ -250,7 +247,6 @@ def test_img_avg_all(net_glob, net_local_list, args, dataset_test, return_net=Fa
         w_glob_temp[k] = torch.div(w_glob_temp[k], args.num_users)
     net_glob_temp.load_state_dict(w_glob_temp)
 
-    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img(net_glob_temp, dataset_test, args)
 
     if return_net:

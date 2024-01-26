@@ -1,15 +1,15 @@
-# pylint: disable=redefined-outer-name
-
-import matplotlib
+from collections.abc import Sized
+from typing import Optional, Union, cast
+import matplotlib  # type:ignore
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type:ignore
 
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms  # type:ignore
 
 from utils.options import args_parser
 from models.Nets import MLP, CNNMnist, CNNCifar
@@ -110,6 +110,8 @@ if __name__ == "__main__":
         exit("Error: unrecognized dataset")
 
     # build model
+    net_glob: Optional[Union[CNNCifar, CNNMnist, MLP]] = None
+
     if args.model == "cnn" and args.dataset == "cifar":
         net_glob = CNNCifar(args=args).to(args.device)
     elif args.model == "cnn" and args.dataset == "mnist":
@@ -135,7 +137,6 @@ if __name__ == "__main__":
             data, target = data.to(args.device), target.to(args.device)
             optimizer.zero_grad()
 
-            # pylint: disable=not-callable
             output = net_glob(data)
             loss = F.cross_entropy(output, target)
             loss.backward()
@@ -145,17 +146,16 @@ if __name__ == "__main__":
                     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         epoch,
                         batch_idx * len(data),
-                        len(train_loader.dataset),
+                        len(cast(Sized, train_loader.dataset)),
                         100.0 * batch_idx / len(train_loader),
                         loss.item(),
                     )
                 )
             batch_loss.append(loss.item())
 
-        # pylint: disable=no-value-for-parameter
         loss_avg = sum(batch_loss) / len(batch_loss)
         list_loss.append(loss_avg)
-        test_acc, test_loss = test(net_glob, test_loader)
+        test_acc, test_loss = test(args=args, net_g=net_glob, data_loader=test_loader)
         print(
             "Train Epoch: {}, Train loss: {}, Test loss: {}, Test acc: {}".format(
                 epoch, loss_avg, test_loss, test_acc

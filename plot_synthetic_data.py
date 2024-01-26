@@ -1,9 +1,7 @@
-# pylint: disable=redefined-outer-name
-
 import numpy as np
+import matplotlib.pyplot as plt  # type: ignore
 
 np.random.seed(123)
-import matplotlib.pyplot as plt
 
 d = 20
 trainN = 2000

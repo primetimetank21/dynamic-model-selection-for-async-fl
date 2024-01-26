@@ -6,7 +6,7 @@ import os
 import pickle
 import itertools
 import numpy as np
-import pandas as pd
+import pandas as pd  # type:ignore
 
 # from scipy.stats import mode
 import torch
@@ -78,7 +78,6 @@ if __name__ == "__main__":
             num_param_glob += net_glob.state_dict()[key].numel()
     percentage_param = 100 * float(num_param_glob) / num_param_local
 
-    # pylint: disable=duplicate-string-formatting-argument
     print(
         "# Params: {} (local), {} (global); Percentage {:.2f} ({}/{})".format(
             num_param_local,
@@ -108,29 +107,31 @@ if __name__ == "__main__":
     results = []
 
     m = max(int(args.frac * args.num_users), 1)
-    I = torch.ones((m, m))
+    I = torch.ones((m, m))  # noqa: E741
     i = torch.ones((m, 1))
     omega = I - 1 / m * i.mm(i.T)
     omega = omega**2
     omega = omega.cuda()
 
-    W = [net_local_list[0].state_dict()[key].flatten() for key in w_glob_keys]
-    W = torch.cat(W)
+    W: torch.Tensor = torch.cat(
+        [net_local_list[0].state_dict()[key].flatten() for key in w_glob_keys]
+    )
     d = len(W)
     del W
 
     for _iter in range(args.epochs):
-        w_glob = {}
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
 
         W = torch.zeros((d, m)).cuda()
         for idx, user in enumerate(idxs_users):
-            W_local = [
-                net_local_list[user].state_dict()[key].flatten() for key in w_glob_keys
-            ]
-            W_local = torch.cat(W_local)
+            W_local: torch.Tensor = torch.cat(
+                [
+                    net_local_list[user].state_dict()[key].flatten()
+                    for key in w_glob_keys
+                ]
+            )
             W[:, idx] = W_local
 
         for idx, user in enumerate(idxs_users):
@@ -167,7 +168,6 @@ if __name__ == "__main__":
                 )
                 torch.save(best_net_list[user].state_dict(), model_save_path)
 
-        # pylint: disable=unbalanced-tuple-unpacking
         acc_test_local, loss_test_local = test_img_local_all(
             best_net_list, args, dataset_test, dict_users_test
         )
@@ -188,9 +188,8 @@ if __name__ == "__main__":
         results.append(
             np.array([_iter, acc_test_local, acc_test_avg, best_acc.mean(), None, None])
         )
-        final_results = np.array(results)
         final_results = pd.DataFrame(
-            final_results,
+            np.array(results),
             columns=[
                 "epoch",
                 "acc_test_local",

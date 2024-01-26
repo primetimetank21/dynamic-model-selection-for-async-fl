@@ -2,7 +2,7 @@ import copy
 import os
 import pickle
 import itertools
-import pandas as pd
+import pandas as pd  # type:ignore
 import numpy as np
 import torch
 
@@ -69,7 +69,6 @@ if __name__ == "__main__":
         if key in w_glob_keys:
             num_param_glob += net_glob.state_dict()[key].numel()
     percentage_param = 100 * float(num_param_glob) / num_param_local
-    # pylint: disable=duplicate-string-formatting-argument
     print(
         "# Params: {} (local), {} (global); Percentage {:.2f} ({}/{})".format(
             num_param_local,
@@ -85,7 +84,6 @@ if __name__ == "__main__":
     for user in range(args.num_users):
         net_local_list.append(copy.deepcopy(net_glob))
 
-    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img_avg_all(
         net_glob, net_local_list, args, dataset_test
     )
@@ -123,7 +121,7 @@ if __name__ == "__main__":
     )
 
     for _iter in range(args.epochs):
-        w_glob = {}
+        w_glob: dict = {}
         loss_locals = []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
@@ -199,15 +197,13 @@ if __name__ == "__main__":
         results.append(
             np.array([_iter, acc_test_local, acc_test_avg, best_acc_local, None, None])
         )
-        final_results = np.array(results)
-        final_results = pd.DataFrame(final_results, columns=results_columns)
+        final_results = pd.DataFrame(np.array(results), columns=results_columns)
         final_results.to_csv(results_save_path, index=False)
 
     acc_test_local, loss_test_local = test_img_local_all(
         final_net_list, args, dataset_test, dict_users_test
     )
 
-    # pylint: disable=unbalanced-tuple-unpacking
     acc_test_avg, loss_test_avg = test_img_avg_all(
         net_glob, final_net_list, args, dataset_test
     )
@@ -232,8 +228,7 @@ if __name__ == "__main__":
             ]
         )
     )
-    final_results = np.array(results)
-    final_results = pd.DataFrame(final_results, columns=results_columns)
+    final_results = pd.DataFrame(np.array(results), columns=results_columns)
     final_results.to_csv(results_save_path, index=False)
 
     # save models

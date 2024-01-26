@@ -1,8 +1,11 @@
+from typing import cast
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
 import math
+
+from utils.coba_dataset import COBA
 
 
 class DatasetSplit(Dataset):
@@ -17,9 +20,9 @@ class DatasetSplit(Dataset):
         try:
             image, label = self.dataset[self.idxs[item]]
         except IndexError:  # for COBA dataset
-            # pylint: disable=no-member
-            image = self.data[item]
-            label = self.targets[item]
+            coba_self: COBA = cast(COBA, self)
+            image = coba_self.data[item]
+            label = coba_self.targets[item]
 
         return image, label
 
@@ -48,8 +51,9 @@ class LocalUpdate(object):
             batch_loss = []
             for _, (images, labels) in enumerate(self.ldr_train):
                 # print(f"self.ldr_train: {self.ldr_train}")
-                images, labels = images.to(self.args.device), labels.to(
-                    self.args.device
+                images, labels = (
+                    images.to(self.args.device),
+                    labels.to(self.args.device),
                 )
                 net.zero_grad()
                 # print(f"images: shape={images.shape}")
@@ -96,8 +100,9 @@ class LocalUpdateMTL(object):
         for _ in range(local_eps):
             batch_loss = []
             for _, (images, labels) in enumerate(self.ldr_train):
-                images, labels = images.to(self.args.device), labels.to(
-                    self.args.device
+                images, labels = (
+                    images.to(self.args.device),
+                    labels.to(self.args.device),
                 )
                 net.zero_grad()
                 log_probs = net(images)

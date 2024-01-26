@@ -126,7 +126,6 @@ class CNNCoba(nn.Sequential):
             nn.LogSoftmax(dim=1),
         )
 
-    # pylint: disable=arguments-renamed
     def forward(self, x):
         output = self.layers(x)
         return output

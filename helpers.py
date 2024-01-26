@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn import metrics
+import pandas as pd  # type:ignore
+import matplotlib.pyplot as plt  # type:ignore
+from sklearn import metrics  # type:ignore
 
 
 def load_ICU_data(path):

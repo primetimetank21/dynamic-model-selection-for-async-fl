@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name
+# mypy: ignore-errors
 
 import copy
 import os
@@ -11,7 +11,6 @@ from torch import nn
 from utils.sampling import fair_iid, fair_noniid
 from utils.options import args_parser
 
-# pylint: disable=no-name-in-module
 from models.Update import LocalUpdate_noLG  # ,LocalUpdate
 
 from models.Fed import FedAvg
@@ -62,7 +61,7 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
 
     # standardize the data
     scaler = StandardScaler().fit(X_train)
-    scale_df = lambda df, scaler: pd.DataFrame(
+    scale_df = lambda df, scaler: pd.DataFrame(  # noqa: E731
         scaler.transform(df), columns=df.columns, index=df.index
     )
     X_train = X_train.pipe(scale_df, scaler)
@@ -293,7 +292,6 @@ def run_all(clf_all1, clf_all2, adv_all1, adv_all2, adv_all3):
 
     def eval_global_performance_text(test_loader_i, global_model, adv_model):
         with torch.no_grad():
-            # pylint: disable=undefined-loop-variable
             for test_x, test_y, test_z in test_loader_i:
                 test_x = test_x.to(args.device)
                 local_pred, clf_pred = global_model(test_x)

@@ -1,12 +1,12 @@
 from pathlib import Path
 import warnings
-import opendatasets as od
-from typing import List, Optional, Callable, Tuple, Dict
+import opendatasets as od  # type: ignore
+from typing import List, Optional, Callable, Tuple, Dict, cast
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torchvision.datasets.vision import VisionDataset
-from torch.utils.data import Subset
+from torchvision.datasets.vision import VisionDataset  # type: ignore
+from torch.utils.data.dataset import Subset
 
 
 ## Define custom CobaDataset class
@@ -141,7 +141,6 @@ class COBA(VisionDataset):
         label_file: str = "targets.pt"
         targets = torch.load(Path.cwd().joinpath(self.raw_folder, label_file))
 
-        # pylint:disable=not-callable
         targets = F.one_hot(targets, num_classes=14)
 
         return data, targets
@@ -157,7 +156,7 @@ class COBA(VisionDataset):
             image = self.transform(image)
 
         if self.target_transform:
-            target = self.target_transform(target)
+            label = self.target_transform(label)
 
         return image, label
 
@@ -184,29 +183,33 @@ class COBA(VisionDataset):
         )
 
 
-# pylint: disable=super-init-not-called
 class COBA_Split(COBA):
     def __init__(self, dataset: Subset) -> None:
+        coba_data: COBA = cast(COBA, dataset.dataset)
+
         self.root, self.transform, self.target_transform = (
-            dataset.dataset.root,
-            dataset.dataset.transform,
-            dataset.dataset.target_transform,
+            coba_data.root,
+            coba_data.transform,
+            coba_data.target_transform,
         )
 
         new_dataset: List[Tuple[torch.Tensor, torch.Tensor]] = [
-            (img, label) for img, label in dataset
+            (img, label) for img, label in iter(dataset)
         ]
 
-        imgs, labels = [data[0] for data in new_dataset], [
-            data[1] for data in new_dataset
-        ]
+        imgs, labels = (
+            [data[0] for data in new_dataset],
+            [data[1] for data in new_dataset],
+        )
 
         self.data, self.targets = torch.stack(imgs), torch.stack(labels)
 
     @property
     def raw_folder(self) -> Path:
-        return Path(self.root, self.__class__.__base__.__name__, "raw")
+        parent_class: type = cast(type, self.__class__.__base__)
+        return Path(self.root, parent_class.__name__, "raw")
 
     @property
     def processed_folder(self) -> Path:
-        return Path(self.root, self.__class__.__base__.__name__, "processed")
+        parent_class: type = cast(type, self.__class__.__base__)
+        return Path(self.root, parent_class.__name__, "processed")

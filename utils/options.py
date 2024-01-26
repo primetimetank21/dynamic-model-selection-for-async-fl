@@ -4,7 +4,7 @@ from typing import Optional
 from pathlib import Path
 
 
-def args_parser() -> argparse.Namespace():
+def args_parser() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     # federated arguments
     parser.add_argument("--epochs", type=int, default=10, help="rounds of training")
