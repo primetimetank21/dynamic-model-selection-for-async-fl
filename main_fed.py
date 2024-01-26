@@ -14,7 +14,6 @@ from models.test import test_img
 import os
 from pathlib import Path
 
-# maybe TODO: begin analyzing data
 if __name__ == "__main__":
     # parse args
     args = args_parser()
