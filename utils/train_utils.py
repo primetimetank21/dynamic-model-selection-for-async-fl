@@ -1,8 +1,15 @@
+import os
+from pathlib import Path
+from typing import List
 from torchvision import datasets, transforms  # type:ignore
 from torch.utils.data import random_split
 from models.Nets import MLP, CNNCoba, CNNMnist, CNNCifar
 from utils.coba_dataset import COBA, COBA_Split
 from utils.sampling import iid, noniid
+import seaborn as sns  # type:ignore
+import matplotlib.pyplot as plt  # type:ignore
+import numpy as np
+import pandas as pd  # type:ignore
 
 
 trans_mnist = transforms.Compose(
@@ -144,3 +151,32 @@ def get_model(args):
     print(net_glob)
 
     return net_glob
+
+
+def graph_adjusted(col_name: str, filename: str, df: pd.DataFrame) -> None:
+    adjusted_col = (
+        df.groupby(np.arange(len(df)) // 10).mean()[col_name].values
+    )  # averaged every 10 epochs
+    epochs = np.arange(len(df) // 10) * 10
+    sns.lineplot(x=epochs, y=adjusted_col).set(
+        title=filename.split(os.sep)[-1].split(".")[0].title(),
+        xlabel="Epochs",
+        ylabel="Value",
+    )
+    plt.savefig(filename)
+    plt.clf()
+
+
+def save_metrics_graphs(base_dir: Path, df: pd.DataFrame) -> None:
+    col_names: List[str] = [
+        col_name for col_name in df.columns.values if col_name != "epoch"
+    ]
+
+    assert len(col_names) == 7
+
+    for col_name in col_names:
+        graph_adjusted(
+            col_name=col_name,
+            filename=Path(base_dir, "fed", f"{col_name}.png").as_posix(),
+            df=df,
+        )

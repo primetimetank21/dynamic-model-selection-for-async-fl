@@ -8,7 +8,7 @@ from typing import Optional, Union, cast
 from models.Nets import MLP, CNNCifar, CNNCoba, CNNMnist
 
 from utils.options import args_parser, get_logger
-from utils.train_utils import get_data, get_model
+from utils.train_utils import get_data, get_model, save_metrics_graphs
 from models.Update import LocalUpdate
 from models.test import test_img
 import os
@@ -77,6 +77,7 @@ if __name__ == "__main__":
 
     lr: float = args.lr
     results: list = []
+    final_results: Optional[pd.DataFrame] = None
 
     logger.info("Starting training loop (%i epochs)", args.epochs)
     for _iter in range(args.epochs):
@@ -182,6 +183,7 @@ if __name__ == "__main__":
                     "best_acc",
                 ],
             )
+
             final_results.to_csv(results_save_path, index=False)
 
         if (_iter + 1) % 50 == 0:
@@ -193,3 +195,8 @@ if __name__ == "__main__":
             torch.save(net_glob.state_dict(), model_save_path)
 
     logger.info("Best model, iter: %i, acc: %f", best_epoch, best_acc)
+
+    save_metrics_graphs(base_dir=base_dir, df=final_results)
+
+    # TODO: save best models
+    # best_models_path: Path = Path(base_dir, "fed/best_models.csv")
