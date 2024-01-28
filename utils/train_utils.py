@@ -1,9 +1,12 @@
+from argparse import Namespace
 import os
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional, Union, cast
+import torch
 from torchvision import datasets, transforms  # type:ignore
 from torch.utils.data import random_split
 from models.Nets import MLP, CNNCoba, CNNMnist, CNNCifar
+from models.test import test_img
 from utils.coba_dataset import COBA, COBA_Split
 from utils.sampling import iid, noniid
 import seaborn as sns  # type:ignore
@@ -153,17 +156,21 @@ def get_model(args):
     return net_glob
 
 
-def graph_adjusted(col_name: str, filename: str, df: pd.DataFrame) -> None:
-    adjusted_col = (
-        df.groupby(np.arange(len(df)) // 10).mean()[col_name].values
-    )  # averaged every 10 epochs
+def graph_adjusted(base_dir: Path, col_name: str, df: pd.DataFrame) -> None:
+    graphs_dir: Path = Path(base_dir, "fed", "metrics_graphs")
+    graphs_dir.mkdir(exist_ok=True)
+
+    graph_save_file: Path = Path(graphs_dir, f"{col_name.title()}.pdf")
+
+    # averaged every 10 epochs
+    adjusted_col = df.groupby(np.arange(len(df)) // 10).mean()[col_name].values
     epochs = np.arange(len(df) // 10) * 10
     sns.lineplot(x=epochs, y=adjusted_col).set(
-        title=filename.split(os.sep)[-1].split(".")[0].title(),
+        title=col_name.title(),
         xlabel="Epochs",
         ylabel="Value",
     )
-    plt.savefig(filename)
+    plt.savefig(graph_save_file)
     plt.clf()
 
 
@@ -176,7 +183,123 @@ def save_metrics_graphs(base_dir: Path, df: pd.DataFrame) -> None:
 
     for col_name in col_names:
         graph_adjusted(
+            base_dir=base_dir,
             col_name=col_name,
-            filename=Path(base_dir, "fed", f"{col_name}.png").as_posix(),
             df=df,
         )
+
+
+class ChosenModel:
+    def __init__(
+        self, path: Path, performance_metrics: Dict[str, float], main_metric: str
+    ) -> None:
+        self.path: Path = path
+        self.performance_metrics: Dict[str, float] = performance_metrics
+        self.main_metric: str = main_metric
+        self.main_metric_value: float = performance_metrics[main_metric]
+
+
+def _update_metric_value(old_val: float, new_val: float, metric: str) -> bool:
+    return new_val < old_val if metric == "loss" else new_val > old_val
+
+
+def _reformat_model_for_dataframe(model: ChosenModel) -> Dict[str, Union[str, float]]:
+    model_dict: Dict[str, Union[str, float]] = {
+        "name": model.path.as_posix().split(os.sep)[-1],
+        "main_metric": model.main_metric,
+    }
+    model_dict.update(
+        **{metric: value for metric, value in model.performance_metrics.items()},
+        path=model.path.as_posix(),
+    )
+    return model_dict
+
+
+def _get_best_models(
+    args: Namespace,
+    test_dataset: Union[CNNCifar, CNNMnist, CNNCoba, MLP],
+    metrics: List[str],
+    model_paths: List[Path],
+) -> Dict[str, Optional[ChosenModel]]:
+    best_models: Dict[str, Optional[ChosenModel]] = {metric: None for metric in metrics}
+
+    for model_path in model_paths:
+        # Load into memory
+        model = get_model(args)
+        model.load_state_dict(
+            torch.load(model_path)
+        ) if args.device.type != "cpu" else model.load_state_dict(
+            torch.load(model_path, map_location=torch.device("cpu"))
+        )
+
+        # Test model
+        acc_test, loss_test, f1_test, precision_test, recall_test = test_img(
+            model, test_dataset, args
+        )  # type:ignore
+        results: Dict[str, float] = {
+            metric: value
+            for metric, value in zip(
+                metrics, [acc_test, loss_test, f1_test, precision_test, recall_test]
+            )
+        }
+
+        # Compare to the current best models for each performance metric, replacing if necessary
+        for metric, metric_value in results.items():
+            if best_models[metric] is None or _update_metric_value(
+                old_val=best_models[metric].main_metric_value,  # type:ignore
+                new_val=metric_value,
+                metric=metric,
+            ):
+                best_models[metric] = ChosenModel(
+                    path=model_path, performance_metrics=results, main_metric=metric
+                )
+
+    return best_models
+
+
+def dynamic_model_selector_and_saver(args: Namespace, base_dir: Path) -> None:
+    """
+    Currently only tested on COBA dataset!
+    """
+
+    # Location to save the best models
+    best_models_save_file: Path = Path(base_dir, "fed", "best_models.csv")
+
+    REMOVE_BEST: bool = True  # This is to remove the presumed "best" model files
+    SORTED: bool = False  # This is if we want to sort the models in epoch order
+
+    # Store paths of the models
+    models_dir: Path = Path(base_dir, "fed")
+
+    model_paths: List[Path] = (
+        [model_file for model_file in models_dir.glob("*.pt")]
+        if not SORTED
+        else sorted(
+            [model_file for model_file in models_dir.glob("*.pt")],
+            key=lambda s: int(
+                s.as_posix().split(os.sep)[-1].split("_")[-1].replace(".pt", "")
+            ),
+        )
+    )
+
+    if REMOVE_BEST:
+        model_paths = np.array(model_paths)[
+            list("best_" not in model_path.as_posix() for model_path in model_paths)
+        ].tolist()
+
+    # Get testing data
+    _, test_dataset, _, _ = get_data(args)
+
+    # Get Best Models
+    metrics: List[str] = ["accuracy", "loss", "f1", "precision", "recall"]
+    best_models: Dict[str, Optional[ChosenModel]] = _get_best_models(
+        args=args, test_dataset=test_dataset, metrics=metrics, model_paths=model_paths
+    )
+
+    # Save the Best Models
+    models_dataframe_list: List[Dict[str, Union[str, float]]] = [
+        _reformat_model_for_dataframe(model=cast(ChosenModel, model))
+        for model in best_models.values()
+    ]
+    best_models_df = pd.DataFrame(models_dataframe_list)
+    best_models_df.to_csv(path_or_buf=best_models_save_file, index=False, header=True)

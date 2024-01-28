@@ -8,13 +8,19 @@ from typing import Optional, Union, cast
 from models.Nets import MLP, CNNCifar, CNNCoba, CNNMnist
 
 from utils.options import args_parser, get_logger
-from utils.train_utils import get_data, get_model, save_metrics_graphs
+from utils.train_utils import (
+    dynamic_model_selector_and_saver,
+    get_data,
+    get_model,
+    save_metrics_graphs,
+)
 from models.Update import LocalUpdate
 from models.test import test_img
 import os
 from pathlib import Path
 
-if __name__ == "__main__":
+
+def main() -> None:
     # parse args
     args = args_parser()
     filename: str = __file__.split(os.sep)[-1].split(".")[0]
@@ -71,9 +77,7 @@ if __name__ == "__main__":
 
     loss_train = []
     net_best: Optional[Union[CNNCifar, CNNMnist, CNNCoba, MLP]] = None
-    best_loss = None
     best_acc = None
-    best_epoch = None
 
     lr: float = args.lr
     results: list = []
@@ -150,7 +154,6 @@ if __name__ == "__main__":
             if best_acc is None or acc_test > best_acc:
                 net_best = copy.deepcopy(net_glob)
                 best_acc = acc_test
-                best_epoch = _iter
 
             # if (iter + 1) > args.start_saving:
             #     model_save_path = os.path.join(base_dir, 'fed/model_{}.pt'.format(_iter + 1))
@@ -194,9 +197,9 @@ if __name__ == "__main__":
             torch.save(net_best.state_dict(), best_save_path)
             torch.save(net_glob.state_dict(), model_save_path)
 
-    logger.info("Best model, iter: %i, acc: %f", best_epoch, best_acc)
-
     save_metrics_graphs(base_dir=base_dir, df=final_results)
+    dynamic_model_selector_and_saver(base_dir=base_dir, args=args)
 
-    # TODO: save best models
-    # best_models_path: Path = Path(base_dir, "fed/best_models.csv")
+
+if __name__ == "__main__":
+    main()
