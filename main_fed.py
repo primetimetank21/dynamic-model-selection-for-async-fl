@@ -73,7 +73,7 @@ def main() -> None:
     net_glob.train()
 
     # training
-    results_save_path: Path = Path(base_dir, "fed/results.csv")
+    results_save_path: Path = Path(base_dir, "fed", "results.csv")
 
     loss_train = []
     net_best: Optional[Union[CNNCifar, CNNMnist, CNNCoba, MLP]] = None
@@ -190,8 +190,8 @@ def main() -> None:
             final_results.to_csv(results_save_path, index=False)
 
         if (_iter + 1) % 50 == 0:
-            best_save_path: Path = Path(base_dir, f"fed/best_{_iter+1}.pt")
-            model_save_path: Path = Path(base_dir, f"fed/model_{_iter+1}.pt")
+            best_save_path: Path = Path(base_dir, "fed", f"best_{_iter+1}.pt")
+            model_save_path: Path = Path(base_dir, "fed", f"model_{_iter+1}.pt")
 
             net_best = cast(Union[CNNCifar, CNNMnist, CNNCoba, MLP], net_best)
             torch.save(net_best.state_dict(), best_save_path)
