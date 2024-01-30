@@ -36,12 +36,12 @@ def test_img(
 
     # testing
     logger.debug("Starting testing in test_img()")
-    test_loss: float = 0
-    accuracy: float = 0
-    f1: float = 0
-    precision: float = 0
-    recall: float = 0
-    class_labels: Optional[list] = (
+    test_loss: float = 0.0
+    accuracy: float = 0.0
+    f1: float = 0.0
+    precision: float = 0.0
+    recall: float = 0.0
+    class_labels: Optional[List[str]] = (
         list(datatest.class_to_idx.keys()) if args.dataset == "coba" else None
     )
 
@@ -60,19 +60,16 @@ def test_img(
                 0, 3, 1, 2
             )  # rearranged to be: (batch size: N, color channels: C, height: H, width: W)
 
-        logger.debug("\tcalculating log_probs")
         log_probs: torch.Tensor = net_g(data)
 
         if return_probs:
             probs.append(log_probs.cpu() if IS_USING_GPU else log_probs)
 
         # Sum up batch loss
-        logger.debug("\tcalculating cross entropy loss")
         t: torch.Tensor = target.to(torch.float32) if args.dataset == "coba" else target
         test_loss += F.cross_entropy(log_probs, t, reduction="sum").item()
 
         # Get predictions (y_pred)
-        logger.debug("\tgetting predictions (y_preds)")
         y_pred: torch.Tensor = (
             log_probs.cpu().data.max(1, keepdim=True)[1]
             if args.device.type != "cpu"
@@ -80,7 +77,6 @@ def test_img(
         )
 
         # Get true labels (y_true)
-        logger.debug("\tgetting labels (y_true)")
         y_true: torch.Tensor = (
             torch.tensor(
                 list(map(torch.argmax, target.data)), device="cpu"
@@ -90,7 +86,6 @@ def test_img(
         )
 
         # Calculate Performance metrics
-        logger.debug("\tcalculating performance metrics")
         accuracy += accuracy_score(y_pred=y_pred, y_true=y_true, normalize=False)
         f1 += f1_score(
             labels=class_labels,
@@ -113,6 +108,8 @@ def test_img(
             average="weighted",
             zero_division=0.0,
         )
+
+    logger.debug("Finished test loop")
 
     N: int = len(cast(Sized, data_loader.dataset))
 
