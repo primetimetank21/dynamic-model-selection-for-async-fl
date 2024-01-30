@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd  # type:ignore
 from logging import Logger
 import torch
-from typing import Optional, Union, cast
+from typing import List, Optional, Union, cast
 from models.Nets import MLP, CNNCifar, CNNCoba, CNNMnist
 
 from utils.options import args_parser, get_logger
@@ -37,6 +37,7 @@ def main() -> None:
     logger.debug("%s dataset loaded", args.dataset.upper())
 
     base_dir: Path = Path(
+        Path.cwd(),
         "save",
         args.dataset,
         f"{args.model}_iid{args.iid}_num{args.num_users}_C{args.frac}_le{args.local_ep}",
@@ -80,8 +81,16 @@ def main() -> None:
     best_acc = None
 
     lr: float = args.lr
-    results: list = []
-    final_results: Optional[pd.DataFrame] = None
+    COLUMNS: List[str] = [
+        "epoch",
+        "loss_avg",
+        "loss_test",
+        "acc_test",
+        "f1_test",
+        "precision_test",
+        "recall_test",
+        "best_acc",
+    ]
 
     logger.info("Starting training loop (%i epochs)", args.epochs)
     for _iter in range(args.epochs):
@@ -141,6 +150,7 @@ def main() -> None:
             acc_test, loss_test, f1_test, precision_test, recall_test = test_img(
                 net_glob, dataset_test, args
             )  # type:ignore
+
             logger.info(
                 "\tAvg loss: %.4f, Test loss: %.6f, Accuracy: %.3f, F1: %.4f, Precision: %.4f, Recall: %.4f",
                 loss_avg,
@@ -159,35 +169,37 @@ def main() -> None:
             #     model_save_path = os.path.join(base_dir, 'fed/model_{}.pt'.format(_iter + 1))
             #     torch.save(net_glob.state_dict(), model_save_path)
 
-            results.append(
+            # Save results and add to previous results
+            test_results: pd.DataFrame = pd.DataFrame(
                 np.array(
                     [
-                        _iter,
-                        loss_avg,
-                        loss_test,
-                        acc_test,
-                        f1_test,
-                        precision_test,
-                        recall_test,
-                        best_acc,
+                        [
+                            _iter,
+                            loss_avg,
+                            loss_test,
+                            acc_test,
+                            f1_test,
+                            precision_test,
+                            recall_test,
+                            best_acc,
+                        ]
                     ]
-                )
+                ),
+                columns=COLUMNS,
             )
-            final_results = pd.DataFrame(
-                np.array(results),
-                columns=[
-                    "epoch",
-                    "loss_avg",
-                    "loss_test",
-                    "acc_test",
-                    "f1_test",
-                    "precision_test",
-                    "recall_test",
-                    "best_acc",
-                ],
+
+            prev_results: Optional[pd.DataFrame] = (
+                pd.read_csv(results_save_path) if results_save_path.exists() else None
+            )
+
+            final_results: pd.DataFrame = pd.concat(
+                [prev_results, test_results], ignore_index=True
             )
 
             final_results.to_csv(results_save_path, index=False)
+
+            # Clear up some memory
+            del test_results, prev_results, final_results
 
         if (_iter + 1) % 50 == 0:
             best_save_path: Path = Path(base_dir, "fed", f"best_{_iter+1}.pt")
@@ -198,17 +210,18 @@ def main() -> None:
             torch.save(net_glob.state_dict(), model_save_path)
 
     # Clear up some memory
-    del net_best
-    del net_glob
-    del loss_train
-    del results
-    del dataset_train
-    del dataset_test
-    del dict_users_train
-    del dict_users_test
+    del (
+        net_best,
+        net_glob,
+        loss_train,
+        dataset_train,
+        dataset_test,
+        dict_users_train,
+        dict_users_test,
+    )
 
     # Save results
-    save_metrics_graphs(base_dir=base_dir, df=final_results)
+    save_metrics_graphs(base_dir=base_dir, df=pd.read_csv(results_save_path))
     dynamic_model_selector_and_saver(base_dir=base_dir, args=args)
 
 
