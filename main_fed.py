@@ -197,6 +197,17 @@ def main() -> None:
             torch.save(net_best.state_dict(), best_save_path)
             torch.save(net_glob.state_dict(), model_save_path)
 
+    # Clear up some memory
+    del net_best
+    del net_glob
+    del loss_train
+    del results
+    del dataset_train
+    del dataset_test
+    del dict_users_train
+    del dict_users_test
+
+    # Save results
     save_metrics_graphs(base_dir=base_dir, df=final_results)
     dynamic_model_selector_and_saver(base_dir=base_dir, args=args)
 

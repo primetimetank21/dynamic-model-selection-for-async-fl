@@ -1,5 +1,6 @@
 from argparse import Namespace
 import os
+import resource
 from pathlib import Path
 from typing import Dict, List, Optional, Union, cast
 import torch
@@ -223,9 +224,14 @@ def _get_best_models(
 ) -> Dict[str, Optional[ChosenModel]]:
     best_models: Dict[str, Optional[ChosenModel]] = {metric: None for metric in metrics}
 
+    # Change open file limits to get best models
+    _, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+
+    # Load into memory
+    model = get_model(args)
+
     for model_path in model_paths:
-        # Load into memory
-        model = get_model(args)
         model.load_state_dict(
             torch.load(model_path)
         ) if args.device.type != "cpu" else model.load_state_dict(
@@ -233,9 +239,11 @@ def _get_best_models(
         )
 
         # Test model
+        model.eval()
         acc_test, loss_test, f1_test, precision_test, recall_test = test_img(
             model, test_dataset, args
         )  # type:ignore
+
         results: Dict[str, float] = {
             metric: value
             for metric, value in zip(
