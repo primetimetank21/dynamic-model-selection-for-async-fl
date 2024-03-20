@@ -1,72 +1,78 @@
+.DEFAULT_GOAL := all
+
+# Variables
+VENV_NAME = .venv
+PIP = $(VENV_NAME)/bin/pip
+PYTHON = $(VENV_NAME)/bin/python
+RUFF = $(VENV_NAME)/bin/ruff
+MYPY = $(VENV_NAME)/bin/mypy
+PYTEST = $(VENV_NAME)/bin/pytest
+MUTE_OUTPUT = 1>/dev/null
+ALL_PYTHON_FILES := $$(git ls-files "*.py")
+ALL_iPYTHON_FILES := $$(git ls-files "*.ipynb")
+
 # Get dependencies
-install:
-	./.github/add_github_hooks.sh
-	pip install --upgrade pip && pip install -r requirements.txt
+.PHONY: install
+install: requirements.txt
+	@ chmod +x ./.github/add_github_hooks.sh && ./.github/add_github_hooks.sh
+	@ echo "Installing dependencies... [START]" && \
+	$(PIP) install --upgrade pip $(MUTE_OUTPUT) && $(PIP) install -r requirements.txt $(MUTE_OUTPUT) && \
+	echo "Installing dependencies... [FINISHED]"
+
+# Create/Activate env; install dependencies
+.PHONY: venv/bin/activate
+venv/bin/activate: requirements.txt
+	@ python3 -m venv $(VENV_NAME) && \
+	chmod +x $(VENV_NAME)/bin/activate && \
+	. ./$(VENV_NAME)/bin/activate
+	@ make install -s
+
+# Activate env
+.PHONY: venv
+venv: venv/bin/activate
+	@ . ./$(VENV_NAME)/bin/activate
+
+# Delete env
+.PHONY: delete_venv
+delete_venv:
+	@ rm -rf $(VENV_NAME)
+
+# Run main script (remove if not needed)
+# .PHONY: run 
+# run: venv
+# 	@ $(PYTHON) hello.py
 
 # Format code for consistency
-format:
-	ruff format $$(git ls-files "*.py")
-	ruff format $$(git ls-files "*.ipynb")
+.PHONY: format
+format: venv
+	$(RUFF) format $(ALL_PYTHON_FILES)
+	$(RUFF) format $(ALL_iPYTHON_FILES)
 
 # Check code for any potential issues
-lint:
-	ruff check $$(git ls-files "*.py")
-	mypy $$(git ls-files "*.py")
+.PHONY: lint
+lint: venv
+	$(RUFF) check $(ALL_PYTHON_FILES)
+	$(MYPY) $(ALL_PYTHON_FILES)
 
-type-check:
-	mypy $$(git ls-files "*.py")
+# Check type-hints
+.PHONY: type-check
+type-check: venv
+	@ $(MYPY) $(ALL_PYTHON_FILES)
 
 # Verify code behavior
-test:
-	echo "TODO: implement tests":
+.PHONY: test
+test: venv
+	@ echo "TODO: implement tests"
+# 	@ $(PYTEST) -vv --cov-report term-missing --cov=. testing/
 
-# Run jupyter server
-jupyter:
-	jupyter lab
+# Clean up and remove cache files
+.PHONY: clean
+clean:
+	@ find . -type f -name "*.py[co]" -delete -o -type d -name "__pycache__" -delete
+	@ find . -type f -wholename "*.ipynb_checkpoints/*" -delete && find . -type d -name ".ipynb_checkpoints" -delete
+	@ find . -type f -wholename ".mypy_cache/*" -delete && rm -r .mypy_cache
+	@ find . -type f -wholename ".ruff_cache/*" -delete && rm -r .ruff_cache
 
-# COBA
-run_coba_fedavg_scenarios_noniid:
-	./scripts/coba/main_fed_coba.sh
-
-run_coba_fedavg_scenarios_iid:
-	./scripts/coba/main_fed_coba_iid.sh
-
-run_coba_fedavg_debug:
-	python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level debug --epochs 1 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save coba_fedavg_debug_run1
-
-#really good -- when loss func was Softmax (run1 under le10); trying with LogSoftmax (run2 and run3 under le10)
-# run_coba_fedavg_le10:
-#python main_fed.py --dataset coba --model cnn --num_classes 14 --log_level info --epochs 1000 --lr 0.1 --seed 0 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save coba_fedavg_le10_run1
-
-# TODO: reorganize the rest of these
-run_mnist_fedavg:
-	python main_fed.py --dataset mnist --model mlp --num_classes 10 --log_level info --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --results_save mnist_fedavg_run1
-
-run_mnist_fedavg_le10:
-	python main_fed.py --dataset mnist --model mlp --num_classes 10 --log_level info --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 10 --results_save mnist_fedavg_le10_run1
-
-run_cifar10_fedavg:
-	python main_fed.py --dataset cifar10 --model cnn --num_classes 10 --log_level info --epochs 2000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 50 --results_save cifar10_fedavg_run1
-
-run_cifar10_fedavg_le10:
-	python main_fed.py --dataset cifar10 --model cnn --num_classes 10 --log_level info --epochs 2000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 10 --local_bs 50 --results_save cifar10_fedavg_le10_run1
-
-run_mnist_lgfedavg:
-	python main_lg.py --dataset mnist --model mlp --num_classes 10 --epochs 200 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --num_layers_keep 3 --results_save run1 --load_fed best_400.pt
-
-run_cifar10_lgfedavg:
-	python main_lg.py --dataset cifar10 --model cnn --num_classes 10 --epochs 200 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 50 --num_layers_keep 2 --results_save run1 --load_fed best_1200.pt
-
-run_mnist_mtl:
-	python main_mtl.py --dataset mnist --model mlp --num_classes 10 --epochs 1000 --lr 0.05 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 10 --num_layers_keep 5 --results_save run1
-
-run_cifar10_mtl:
-	python main_mtl.py --dataset cifar10 --model cnn --num_classes 10 --epochs 2000 --lr 0.1 --num_users 100 --shard_per_user 2 --frac 0.1 --local_ep 1 --local_bs 50 --num_layers_keep 5 --results_save run1
-
-run_all_mnist: run_mnist_fedavg run_mnist_lgfedavg run_mnist_mtl
-
-run_all_cifar10: run_cifar10_fedavg run_cifar10_lgfedavg run_cifar10_mtl
-
-run_all: run_all_mnist run_all_cifar10
-
-all: install format lint test
+# Execute all steps
+.PHONY: all
+all: format lint test

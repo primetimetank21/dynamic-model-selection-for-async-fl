@@ -9,3 +9,6 @@ jupyterlab==4.0.9
 opendatasets==0.1.22
 ruff==0.1.14
 mypy==1.8.0
+pytest==8.1.1
+mock==5.1.0
+pytest-cov==4.1.0
