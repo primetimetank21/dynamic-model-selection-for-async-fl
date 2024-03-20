@@ -147,3 +147,7 @@ data/*
 
 # Results
 save/*
+notebooks/coba/*
+notebooks/cifar10/*
+notebooks/mnist/*
+notebooks/data/*
